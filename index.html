@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0f2548" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="manifest" href="manifest.json" />
+    <title>Store Audit</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Top bar -->
+    <header>
+      <span class="logo">&#9670;</span>
+      <div><b>Store Audit</b><small>Field audit console</small></div>
+    </header>
+    <!-- Progress bar (filled by updateProgress() in app.js) -->
+    <div id="progressWrap"><div id="progressBar"></div></div>
+    <div id="progressText"></div>
+    <!-- Tabs. data-t = tab number used by app.js: 0 Info, 3 Cash, 4 Inventory, 1 Observations, 2 Findings, 5 Security.
+         Cash shows for Section 1 (Financial); Inventory + Security for Section 2 (Technical); Observations/Findings for either. -->
+    <nav id="nav">
+      <button data-t="0" class="on">Info</button>
+      <button data-t="3">Cash</button>
+      <button data-t="4">Inventory</button>
+      <button data-t="5">Security</button>
+      <button data-t="1">Observations</button>
+      <button data-t="2">Findings</button>
+    </nav>
+    <!-- app.js draws every tab inside here -->
+    <main id="main"></main>
+    <!-- Bottom buttons -->
+    <div class="bar">
+      <button class="sec" onclick="newAudit()">Clear form</button>
+      <button onclick="submit()">Submit audit</button>
+    </div>
+    <!-- All the logic lives in app.js -->
+    <script src="app.js"></script>
+  </body>
+</html>

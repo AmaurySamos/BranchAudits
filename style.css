@@ -1,0 +1,541 @@
+:root {
+  --bg: #eef1f6;
+  --card: #fff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --brand: #0f2548;
+  --brand2: #1f3864;
+  --accent: #06b6d4;
+  --ok: #16a34a;
+  --bad: #dc2626;
+  --field: #f8fafc;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;
+    --card: #131c2e;
+    --ink: #e5eaf3;
+    --muted: #94a3b8;
+    --line: #243049;
+    --field: #0f1728;
+    --brand: #0a1730;
+  }
+}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  font:
+    15px/1.4 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  padding-bottom: 84px;
+}
+/* Top header bar */
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  border-bottom: 2px solid var(--accent);
+}
+header .logo {
+  color: var(--accent);
+  font-size: 22px;
+}
+header b {
+  display: block;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+}
+header small {
+  color: #9fb3d9;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+/* Progress bar under the header */
+#progressWrap {
+  height: 5px;
+  background: var(--line);
+}
+#progressBar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+  transition: width 0.3s;
+}
+#progressText {
+  background: var(--card);
+  padding: 5px 16px;
+  font: 11px var(--mono);
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+/* Tab bar (pill buttons) */
+nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 56px;
+  z-index: 5;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar {
+  display: none;
+}
+nav button {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--field);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+nav button.on {
+  background: var(--brand2);
+  border-color: var(--brand2);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25);
+}
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+/* Each tab is a <section>; only the active one (.on) is visible */
+section {
+  display: none;
+  padding: 14px 12px;
+}
+section.on {
+  display: block;
+  animation: in 0.2s ease;
+}
+@keyframes in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* Small uppercase group headings */
+h3 {
+  margin: 20px 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h3::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.f h3 {
+  margin-top: 0;
+}
+/* .f = the white card that wraps every question */
+.f {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.f label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+/* Small tag showing a question ID (B.01, C.02 ...) */
+.qid {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(6, 182, 212, 0.14);
+  color: #0891b2;
+  font: 600 11px var(--mono);
+  vertical-align: 1px;
+}
+/* Form fields */
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--field);
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+select {
+  appearance: auto;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 0;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.22);
+}
+textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+.no-comment {
+  border-color: var(--bad);
+  margin-top: 8px;
+}
+/* Yes / No / WR segmented buttons. .Yes/.No/.WR = selected colour; .pos flips colours so Yes = green (security tab) */
+.yn {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.yn button {
+  flex: 1;
+  padding: 11px 4px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--field);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.yn button:last-child {
+  border-right: 0;
+}
+.yn .Yes {
+  background: var(--bad);
+  color: #fff;
+}
+.yn .No {
+  background: var(--ok);
+  color: #fff;
+}
+.yn .WR {
+  background: #64748b;
+  color: #fff;
+}
+.yn.pos .Yes {
+  background: var(--ok);
+}
+.yn.pos .No {
+  background: var(--bad);
+}
+/* Cash count row: label + number box */
+.g {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.g span {
+  width: 110px;
+  font: 13px var(--mono);
+  color: var(--muted);
+}
+.g input {
+  margin: 0 0 6px;
+}
+/* "Total" line */
+.t {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 2px 2px;
+  font-weight: 600;
+  border-top: 1px dashed var(--line);
+  margin-top: 6px;
+}
+.t span:last-child {
+  font-family: var(--mono);
+}
+/* Two columns side by side */
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* Employee card (Security tab) */
+.emp {
+  position: relative;
+  border-left: 4px solid var(--accent);
+}
+.emp .qid {
+  margin-bottom: 8px;
+}
+/* Small red remove (x) button */
+.x {
+  float: right;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--bad);
+  font-size: 20px;
+  line-height: 1;
+}
+/* Fixed bottom bar: Clear form + Submit */
+.bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+  z-index: 6;
+}
+.bar button,
+.add {
+  flex: 1;
+  padding: 13px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--brand2), #2c4f94);
+  box-shadow: 0 2px 6px rgba(31, 56, 100, 0.3);
+}
+.bar button:active,
+.add:active,
+.yn button:active,
+nav button:active {
+  transform: scale(0.97);
+}
+.bar .sec {
+  flex: 0 0 34%;
+  background: var(--field);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.add {
+  width: 100%;
+  margin: 4px 0 12px;
+  background: transparent;
+  color: var(--accent);
+  border: 2px dashed var(--accent);
+  box-shadow: none;
+}
+/* Checkbox chips */
+.chk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chk label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+.chk input {
+  width: auto;
+  margin: 0;
+}
+/* Cash tab layout: 1 column on phones, 2 on wide screens */
+.cash-grid {
+  display: grid;
+  gap: 14px;
+}
+.cash-col {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 900px) {
+  .cash-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+/* Dark cash summary card */
+.cash-summary {
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  border: 0;
+  color: #fff;
+}
+.cash-summary h3 {
+  color: #7dd3fc;
+}
+.cash-summary .t {
+  font-size: 16px;
+  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.cash-summary .t span:last-child {
+  color: #67e8f9;
+}
+
+/* ===== Info tab: audit section checkboxes ===== */
+.scopes {
+  padding: 10px;
+}
+.scope {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--field);
+  cursor: pointer;
+}
+.scope.on {
+  border-color: var(--accent);
+  background: rgba(6, 182, 212, 0.1);
+}
+.scope input {
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+  flex: 0 0 22px;
+  accent-color: var(--accent);
+}
+.scope b {
+  display: block;
+  font-size: 15px;
+}
+.scope small,
+.hint {
+  display: block;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+/* Inventory cards: 1 column on phones, 2 side by side on wide screens */
+.inv-grid {
+  display: grid;
+  gap: 10px;
+}
+@media (min-width: 900px) {
+  .inv-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Count by location (vault / display / sold) */
+.parts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.parts small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.invtot {
+  font: 600 13px var(--mono);
+  margin-top: 4px;
+}
+/* ===== Observations (#s1) & Findings (#s2) ===== */
+
+/* Observations: Yes = green, No = red */
+#s1 .yn .Yes {
+  background: var(--ok);
+}
+#s1 .yn .No {
+  background: var(--bad);
+}
+
+/* Observations: stacked cards, every control the same height */
+#s1 .yn {
+  height: 42px;
+}
+#s1 .yn button {
+  padding: 0;
+}
+#s1 select,
+#s1 input {
+  height: 42px;
+  margin-bottom: 0;
+}
+#s1 textarea {
+  min-height: 56px;
+  margin-bottom: 0;
+}
+#s1 .no-comment {
+  margin-top: 8px;
+}
+
+/* Findings: question on the left, buttons on the right, one row each */
+#s2 .f:has(> .yn) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+}
+#s2 .f:has(> .yn) > label {
+  flex: 1;
+  margin: 0;
+}
+#s2 .f > .yn {
+  flex: 0 0 170px;
+}
+#s2 .yn button {
+  padding: 9px 4px;
+}
+
+/* PC: two columns that pack tightly (no big gaps), headings span both */
+@media (min-width: 900px) {
+  #s1.on,
+  #s2.on {
+    column-count: 2;
+    column-gap: 12px;
+  }
+  #s1 .f,
+  #s2 .f {
+    break-inside: avoid;
+  }
+  #s1 h3,
+  #s2 h3,
+  #s2 > .f:first-child {
+    column-span: all;
+  }
+}
