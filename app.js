@@ -111,7 +111,7 @@ const OBS = [
     "Cash Handling",
     "#Sr. performs random checks, twice per month on each rep",
     "#Sr. performs monthly checks on their own cash",
-    "?Only the Sr. in charge has access to the vault",
+    "!Only the Sr. in charge has access to the vault",
     "CSR cash floats are $100 and Cashier cash float is $200",
     "#Zone Admin visits regularly and does a physical count of cash and signs off with Senior and Zone Admin",
     "?Vouchers consist of small payments to vendors, refund deposits, refund of installation, change and other miscellaneous purchases",
