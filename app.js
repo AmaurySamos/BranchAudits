@@ -463,6 +463,12 @@ const SEC = [
         "Cameras are monitored by the Zone Admin or Senior in the back office?",
       ],
       ["B.11", "y", "Is Armored Car Service or Drop Box utilized?"],
+      [
+        "B.11b",
+        "c",
+        "Comment: why is an Armored Car Service or Drop Box not used?",
+        ["B.11", "No"],
+      ],
       ["B.12", "t", "Which security service is utilized for cash deposit?"],
       ["B.13", "t", "Frequency of cash deposit?"],
       ["B.14", "t", "Where is cash kept when stored overnight?"],
@@ -510,14 +516,32 @@ const SEC = [
         "All staff have been trained to use the fire extinguishers.",
       ],
       [
+        "D.03b",
+        "c",
+        "Comment: why have staff not been trained to use the fire extinguishers?",
+        ["D.03", "No"],
+      ],
+      [
         "D.04",
         "y",
         "All staff have been trained on the robbery preparedness protocols.",
       ],
       [
+        "D.04b",
+        "c",
+        "Comment: why have staff not been trained on the robbery preparedness protocols?",
+        ["D.04", "No"],
+      ],
+      [
         "D.05",
         "y",
         "All staff have been trained on the emergency protocols (fire, hurricane, natural disasters, robbery preparedness, etc.).",
+      ],
+      [
+        "D.05b",
+        "c",
+        "Comment: why have staff not been trained on the emergency protocols?",
+        ["D.05", "No"],
       ],
       ["D.06", "c", "Other comments"],
     ],
@@ -602,6 +626,29 @@ function updateNav() {
     .forEach((b) => (b.style.display = show[b.dataset.t] ? "" : "none"));
   if (!show[D._t || "0"]) D._t = "0";
 }
+// ===== OUTSTANDING VOUCHERS LIST (Cash tab) =====
+const VOUCHER_TYPES = ["Water", "Paper", "Cleaning supplies"]; // suggestions only - you can type anything
+function voucherList() {
+  if (!D.vouchers || !D.vouchers.length) D.vouchers = [{}];
+  D.vch = sumVouchers(); // "vch" is what calc() adds into Total Counted
+  let h = '<div class="f"><label>Outstanding vouchers / receipts</label>';
+  h += `<datalist id="vtypes">${VOUCHER_TYPES.map((o) => `<option value="${o}">`).join("")}</datalist>`;
+  D.vouchers.forEach((v, i) => {
+    h += `<div class="vline"><button class="x" data-delv="${i}" aria-label="Remove voucher">&times;</button>
+      <div class="row2">
+        <input type="number" step="any" inputmode="decimal" placeholder="Amount ($)" data-vi="${i}" data-vc="amt" value="${e(v.amt)}">
+        <input list="vtypes" placeholder="Item (e.g. Water)" data-vi="${i}" data-vc="type" value="${e(v.type)}">
+      </div>
+      <input placeholder="Voucher # / note (optional)" data-vi="${i}" data-vc="ref" value="${e(v.ref)}"></div>`;
+  });
+  return (
+    h +
+    '<button class="add" id="addVoucher">+ Add voucher</button>' +
+    tot("vtot", "Outstanding vouchers total") +
+    "</div>"
+  );
+}
+
 // R() = RENDER. Rebuilds every tab from D (Info, Observations, Findings, Cash, Inventory, Security). Sections not ticked are skipped.
 function R() {
   //structure of the Info tab
@@ -739,7 +786,7 @@ function R() {
           <div class="f">
               <h3>Other</h3>
               ${f("chk", "Checks total ($)", "number")}
-              ${f("vch", "Outstanding vouchers/receipts total ($)", "number")}
+              ${voucherList()}
               ${f("auth", "Authorized amount ($)", "number")}
               ${f(
                 "oth",
@@ -855,6 +902,14 @@ document.addEventListener("input", (ev) => {
     R();
     updateProgress();
     return;
+  } else if (t.dataset.vi != null) {
+    D.vouchers[t.dataset.vi][t.dataset.vc] = t.value;
+    D.vch = sumVouchers();
+    const vt = $("vtot");
+    if (vt) vt.textContent = $$(D.vch);
+    save();
+    calc();
+    return;
   } else if (t.dataset.e != null) {
     D._emp[t.dataset.e][t.dataset.c] = t.value;
   } else if (t.dataset.i != null) {
@@ -934,6 +989,24 @@ document.addEventListener("click", (ev) => {
     }
     applyCond();
     updateProgress();
+    return;
+  }
+  // Add / remove voucher (Cash tab)
+  if (t.id == "addVoucher") {
+    const y = scrollY;
+    D.vouchers.push({});
+    save();
+    R();
+    scrollTo(0, y);
+    return;
+  }
+  if (t.dataset.delv != null) {
+    const y = scrollY;
+    D.vouchers.splice(+t.dataset.delv, 1);
+    D.vch = sumVouchers();
+    save();
+    R();
+    scrollTo(0, y);
     return;
   }
   // Add / remove employee (Security tab)
@@ -1110,7 +1183,7 @@ function submit() {
       c.S,
       n("oth"),
       c.V,
-      D.cnote || "",
+      [D.cnote, voucherText()].filter(Boolean).join(" | "),
     ].map((v) => (D.sFin ? v : "")),
     [D.sFin ? "Financial" : "", D.sTech ? "Technical" : ""]
       .filter(Boolean)
@@ -1222,16 +1295,16 @@ function submit() {
 }
 // Progress bar = answered findings + security Yes/No checks in the chosen sections
 function updateProgress() {
-  const fl = FL.filter((x) => inScope(x.sec)); // findings in the chosen sections
-  const sec = secYN(); // security Yes/No questions (Technical only)
-  const total = fl.length + sec.length;
-  const answered =
-    fl.filter((x) => D["f" + x.id]).length +
-    sec.filter((x) => D[secKey(x[0])]).length;
-  $("progressBar").style.width = (total ? (answered / total) * 100 : 0) + "%";
-  $("progressText").textContent = total
-    ? answered + " of " + total + " checks completed"
-    : "Select Section 1 and/or Section 2 on the Info tab";
+  // const fl = FL.filter((x) => inScope(x.sec)); // findings in the chosen sections
+  // const sec = secYN(); // security Yes/No questions (Technical only)
+  // const total = fl.length + sec.length;
+  // const answered =
+  //   fl.filter((x) => D["f" + x.id]).length +
+  //   sec.filter((x) => D[secKey(x[0])]).length;
+  // $("progressBar").style.width = (total ? (answered / total) * 100 : 0) + "%";
+  // $("progressText").textContent = total
+  //   ? answered + " of " + total + " checks completed"
+  //   : "Select Section 1 and/or Section 2 on the Info tab";
 }
 // NOTE: doGet is Google Apps Script code (it belongs in Code.gs). It does nothing in the browser.
 function doGet(e) {
