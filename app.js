@@ -619,6 +619,9 @@ function voucherList() {
   // inp() builds one small labelled box for voucher i, field c
   const inp = (i, c, label, type, x) =>
     `<div><small class="vl">${label}</small><input type="${type || "text"}" ${x || ""} data-vi="${i}" data-vc="${c}" value="${e(D.vouchers[i][c])}"></div>`;
+  // sg() builds a Yes/No button pair for voucher i, field c (signed by authorizer / receiver)
+  const sg = (i, c, label) =>
+    `<div><small class="vl">${label}</small><div class="yn pos" data-vi="${i}" data-vc="${c}">${["Yes", "No"].map((o) => `<button data-v="${o}" class="${D.vouchers[i][c] === o ? o : ""}">${o}</button>`).join("")}</div></div>`;
   let h = '<div class="f"><label>Outstanding vouchers / receipts</label>';
   h += `<datalist id="vtypes">${VOUCHER_TYPES.map((o) => `<option value="${o}">`).join("")}</datalist>`;
   D.vouchers.forEach((v, i) => {
@@ -626,9 +629,7 @@ function voucherList() {
       <div class="row2">${inp(i, "amt", "Amount ($)", "number", 'step="any" inputmode="decimal"')}${inp(i, "type", "Item", "text", 'list="vtypes" placeholder="e.g. Water"')}</div>
       <div class="row2">${inp(i, "date", "Date", "date")}${inp(i, "ref", "Voucher #", "text")}</div>
       ${inp(i, "purpose", "Purpose", "text")}
-      <div class="row2">${inp(i, "auth", "Authorizer", "text")}${inp(i, "recv", "Receiver", "text")}</div>
-      <small class="vl">Signed (Yes / No)</small>
-      <select data-vi="${i}" data-vc="signed"><option value="">Select...</option>${["Yes", "No"].map((o) => `<option${v.signed === o ? " selected" : ""}>${o}</option>`).join("")}</select></div>`;
+      <div class="row2">${sg(i, "auth", "Signed by authorizer?")}${sg(i, "recv", "Signed by receiver?")}</div></div>`;
   });
   return (
     h +
@@ -806,7 +807,6 @@ const BUILD = {
             parseFloat(v.amt) || 0,
             v.auth || "",
             v.recv || "",
-            v.signed || "",
             `${x.name} (${x.type})`,
           ]),
         ),
@@ -847,9 +847,8 @@ const BUILD = {
           "Voucher #",
           "Purpose",
           "Amount",
-          "Authorizer",
-          "Receiver",
-          "Signed",
+          "Signed by Authorizer",
+          "Signed by Receiver",
           "Count Sheet",
         ],
         rows: vrows,
@@ -1476,6 +1475,18 @@ document.addEventListener("click", (ev) => {
   }
   // Yes/No/WR buttons
   const b = t.closest(".yn button");
+  if (b && b.parentNode.dataset.vi != null) {
+    // Voucher "signed by authorizer / receiver" Yes/No buttons
+    const g = b.parentNode,
+      vo = D.vouchers[g.dataset.vi];
+    vo[g.dataset.vc] = vo[g.dataset.vc] === b.dataset.v ? "" : b.dataset.v;
+    g.querySelectorAll("button").forEach(
+      (x) =>
+        (x.className = vo[g.dataset.vc] === x.dataset.v ? x.dataset.v : ""),
+    );
+    save();
+    return;
+  }
   if (b) {
     const k = b.parentNode.dataset.k;
     const v = b.dataset.v;
