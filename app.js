@@ -359,8 +359,7 @@ function inventorySummary() {
   const accuracy = counted
     ? (((counted - variances) / counted) * 100).toFixed(1)
     : "0.0";
-  return;
-  `<div class="f">
+  return `<div class="f">
         <h3>Inventory Summary</h3>
         <div>Total Items: <b>${items.length}</b></div>
         <div>Items Counted: <b id="sumCounted">${counted}</b></div>
