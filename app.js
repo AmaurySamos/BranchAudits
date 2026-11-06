@@ -22,6 +22,7 @@ try {
 } catch (e) {}
 if (!D._inv || !D._inv.length) D._inv = [{}];
 if (!D._emp || !D._emp.length) D._emp = [{}];
+if (!D.cashCounts) D.cashCounts = [];
 // Saves D to the phone's localStorage (the draft)
 const save = () => {
   try {
@@ -661,7 +662,52 @@ function voucherList() {
     "</div>"
   );
 }
-
+function saveCashCount() {
+  if (!D.cashType) {
+    alert("Please select a count type.");
+    return;
+  }
+  if (!(D.cashName || "").trim()) {
+    alert("Please enter a name.");
+    return;
+  }
+  const c = calc();
+  D.cashCounts.push({
+    type: D.cashType,
+    name: D.cashName,
+    counted: c.T,
+    authorized: n("auth"),
+    variance: c.V,
+    total: c.T,
+    cash: {
+      l001: D["l0.01"] || "",
+      l005: D["l0.05"] || "",
+      l010: D["l0.1"] || "",
+      l025: D["l0.25"] || "",
+      l050: D["l0.5"] || "",
+      l100: D["l1"] || "",
+    },
+  });
+  clearCashForm();
+  save();
+  R();
+  tab("3");
+}
+function clearCashForm() {
+  D.cashType = "";
+  D.cashName = "";
+  [
+    ...LO.map((d) => "l" + d),
+    ...RO.map(([d]) => "r" + d),
+    ...CU.map((d) => "c" + d),
+    ...CU.map((d) => "u" + d),
+  ].forEach((k) => (D[k] = ""));
+  D.chk = "";
+  D.vch = "";
+  D.auth = "";
+  D.oth = "";
+  D.cnote = "";
+}
 // R() = RENDER. Rebuilds every tab from D (Info, Observations, Findings, Cash, Inventory, Security). Sections not ticked are skipped.
 function R() {
   //structure of the Info tab
@@ -781,6 +827,31 @@ function R() {
   h += `
   </section>
   <section id="s3">
+      <div class="f">
+        <h3>Cash Count Information</h3>
+        <label>Count Type</label>
+        <select data-k="cashType">
+            <option value="">Select...</option>
+            <option value="Cashier">
+                Cashier
+            </option>
+            <option value="DigiWallet">
+                DigiWallet
+            </option>
+            <option value="Petty Cash">
+                Petty Cash
+            </option>
+            <option value="Vault">
+                Vault
+            </option>
+        </select>
+        <label>Name</label>
+        <input
+            data-k="cashName"
+            placeholder="Cashier name, Vault name, etc."
+            value="${e(D.cashName)}"
+        >
+      </div>
       <div class="cash-grid">
           <div class="cash-col">
           <div class="f">
@@ -820,19 +891,42 @@ function R() {
                     ${CU.map((d) => cg("u" + d, "US$" + d)).join("")}
                     ${tot("tU", "Total USD in BZD")}
                 </div>
-                <div class="f cash-summary">
-                    <h3>Cash Summary</h3>
-                    ${tot("tT", "Total counted & verified")}
-                    ${tot("tS", "Cash short/(over) vs authorized")}
-                    ${tot("tV", "Variance after other verified")}
-                    <label>Cash reconciled?</label>
-                    <div class="yn pos" data-k="sCREC">
-                        ${["Yes", "No"].map((v) => `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">${v}</button>`).join("")}
+                  <div class="f cash-summary">
+                  <h3>Cash Summary</h3>
+                  ${tot("tT", "Total counted & verified")}
+                  ${tot("tS", "Cash short/(over) vs authorized")}
+                  ${tot("tV", "Variance after other verified")}
+                  <button
+                      class="add"
+                      id="saveCashCount">
+                      Save Cash Count
+                  </button>
+                    <div class="f">
+                      <h3>Saved Cash Counts</h3>
+                      ${(D.cashCounts || [])
+                        .map(
+                          (c, i) => `
+                              <div>
+                                  ${i + 1}. ${c.type}
+                                  -
+                                  ${c.name}
+                                  ($${c.total.toFixed(2)})
+                              </div>
+                          `,
+                        )
+                        .join("")}
                     </div>
-                    <div data-cond="CREC|No">
-                        <label>Reason the cash did not reconcile</label>
-                        <textarea data-k="crecnote">${e(D.crecnote)}</textarea>
-                    </div>
+                  <label>Cash reconciled?</label>
+                  <div class="yn pos" data-k="sCREC">
+                      ${["Yes", "No"]
+                        .map(
+                          (v) =>
+                            `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">
+                              ${v}
+                            </button>`,
+                        )
+                        .join("")}
+                  </div>
                 </div>
             </div>
           </div>
@@ -1052,6 +1146,10 @@ document.addEventListener("click", (ev) => {
     }
     return;
   }
+  if (t.id === "saveCashCount") {
+    saveCashCount();
+    return;
+  }
   // Add inventory row
   if (t.id == "loadInventory") {
     loadInventory();
@@ -1070,7 +1168,11 @@ document.addEventListener("click", (ev) => {
 // "Clear form" button: wipes D after confirmation
 function newAudit() {
   if (!confirm("Clear everything on this form?")) return;
-  D = { _inv: [{}], _emp: [{}] };
+  D = {
+    _inv: [{}],
+    _emp: [{}],
+    cashCounts: [],
+  };
   save();
   R();
 }
