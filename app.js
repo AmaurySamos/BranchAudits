@@ -640,15 +640,19 @@ const voucherText = () =>
 function voucherList() {
   if (!D.vouchers || !D.vouchers.length) D.vouchers = [{}];
   D.vch = sumVouchers(); // "vch" is what calc() adds into Total Counted
+  // inp() builds one small labelled box for voucher i, field c
+  const inp = (i, c, label, type, x) =>
+    `<div><small class="vl">${label}</small><input type="${type || "text"}" ${x || ""} data-vi="${i}" data-vc="${c}" value="${e(D.vouchers[i][c])}"></div>`;
   let h = '<div class="f"><label>Outstanding vouchers / receipts</label>';
   h += `<datalist id="vtypes">${VOUCHER_TYPES.map((o) => `<option value="${o}">`).join("")}</datalist>`;
   D.vouchers.forEach((v, i) => {
     h += `<div class="vline"><button class="x" data-delv="${i}" aria-label="Remove voucher">&times;</button>
-      <div class="row2">
-        <input type="number" step="any" inputmode="decimal" placeholder="Amount ($)" data-vi="${i}" data-vc="amt" value="${e(v.amt)}">
-        <input list="vtypes" placeholder="Item (e.g. Water)" data-vi="${i}" data-vc="type" value="${e(v.type)}">
-      </div>
-      <input placeholder="Voucher # / note (optional)" data-vi="${i}" data-vc="ref" value="${e(v.ref)}"></div>`;
+      <div class="row2">${inp(i, "amt", "Amount ($)", "number", 'step="any" inputmode="decimal"')}${inp(i, "type", "Item", "text", 'list="vtypes" placeholder="e.g. Water"')}</div>
+      <div class="row2">${inp(i, "date", "Date", "date")}${inp(i, "ref", "Voucher #", "text")}</div>
+      ${inp(i, "purpose", "Purpose", "text")}
+      <div class="row2">${inp(i, "auth", "Authorizer", "text")}${inp(i, "recv", "Receiver", "text")}</div>
+      <small class="vl">Signed (Yes / No)</small>
+      <select data-vi="${i}" data-vc="signed"><option value="">Select...</option>${["Yes", "No"].map((o) => `<option${v.signed === o ? " selected" : ""}>${o}</option>`).join("")}</select></div>`;
   });
   return (
     h +
@@ -1249,6 +1253,22 @@ function submit() {
       r.key || "",
       r.safe || "",
     ]);
+  // One row per voucher for the "Vouchers" tab
+  const vrows = (D.vouchers || [])
+    .filter((v) => parseFloat(v.amt) || v.type || v.purpose)
+    .map((v) => [
+      id,
+      D.branch,
+      D.adate,
+      v.date || "",
+      v.type || "",
+      v.ref || "",
+      v.purpose || "",
+      parseFloat(v.amt) || 0,
+      v.auth || "",
+      v.recv || "",
+      v.signed || "",
+    ]);
   const rec = {
     token: TOKEN,
     submissionId: id,
@@ -1258,6 +1278,22 @@ function submit() {
         rows: [row],
       },
       "Security Checks": { headers: SH, rows: D.sTech ? [srow] : [] },
+      Vouchers: {
+        headers: [
+          "Submission ID",
+          "Branch",
+          "Audit Date",
+          "Voucher Date",
+          "Item",
+          "Voucher #",
+          "Purpose",
+          "Amount",
+          "Authorizer",
+          "Receiver",
+          "Signed",
+        ],
+        rows: D.sFin ? vrows : [],
+      },
       "Employee Access": {
         headers: [
           "Submission ID",

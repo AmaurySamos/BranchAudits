@@ -550,3 +550,9 @@ nav button:active {
 .vline .x {
   margin-left: 8px;
 }
+.vl {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 4px 0 2px;
+}
