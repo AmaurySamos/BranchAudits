@@ -556,9 +556,11 @@ const secYN = () =>
 function applyCond() {
   document.querySelectorAll("[data-cond]").forEach((el) => {
     const [id, v] = el.dataset.cond.split("|");
-    el.style.display = D[secKey(id)] === v ? "" : "none";
+    const value = id.includes(".")
+      ? D[secKey(id)] // B.01, C.03, etc.
+      : D[id]; // sCREC
+    el.style.display = value === v ? "" : "none";
   });
-  D["sCREC"] === "No";
 }
 function renderSecurity() {
   let h = '<section id="s5"><h3>A &middot; Employee Access</h3>';
@@ -912,13 +914,13 @@ function R() {
                   </div>
                     <div class="reconcile-note"
                       data-cond="sCREC|No"
-                      style="display:none" >
+                      style="display:none">
                       <label>Reason the cash did not reconcile</label>
                       <textarea
                           data-k="crecnote"
                           placeholder="Explain the variance, shortage, overage, missing voucher, etc."
                       >${e(D.crecnote)}</textarea>
-                  </div>
+                    </div>
                 </div>
                   <button
                       class="cash-save"
