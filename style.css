@@ -589,3 +589,8 @@ nav button:active {
 .saved-count:last-child {
   border-bottom: 0;
 }
+.reconcile-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}

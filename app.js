@@ -558,6 +558,7 @@ function applyCond() {
     const [id, v] = el.dataset.cond.split("|");
     el.style.display = D[secKey(id)] === v ? "" : "none";
   });
+  D["sCREC"] === "No";
 }
 function renderSecurity() {
   let h = '<section id="s5"><h3>A &middot; Employee Access</h3>';
@@ -909,6 +910,15 @@ function R() {
                           .join("")}
                     </div>
                   </div>
+                    <div class="reconcile-note"
+                      data-cond="sCREC|No"
+                      style="display:none" >
+                      <label>Reason the cash did not reconcile</label>
+                      <textarea
+                          data-k="crecnote"
+                          placeholder="Explain the variance, shortage, overage, missing voucher, etc."
+                      >${e(D.crecnote)}</textarea>
+                  </div>
                 </div>
                   <button
                       class="cash-save"
@@ -1233,11 +1243,6 @@ function submit() {
         missSec.join(", "),
     );
     tab("5");
-    return;
-  }
-  if (D.sFin && !D.sCREC) {
-    alert("Please answer 'Cash reconciled?' on the Cash tab.");
-    tab("3");
     return;
   }
   if (D.sFin && D.sCREC === "No" && !(D.crecnote || "").trim()) {
