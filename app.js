@@ -173,7 +173,7 @@ const OBS = [
     "Other comments",
   ],
 ];
-// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, WR = area not reviewed
+// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, NR = area not reviewed
 const FIN = [
   [
     "SECURITY",
@@ -1004,7 +1004,7 @@ const BUILD = {
     );
     if (miss.length) {
       alert(
-        "Please answer all findings (Yes / No / WR).\n\n" +
+        "Please answer all findings (Yes / No / NR).\n\n" +
           miss.length +
           " missing: " +
           miss.join(", "),
@@ -1228,7 +1228,7 @@ function R() {
       const k = "f" + fid(si, qi);
       h +=
         `<div class="f"><label>${fid(si, qi)} ${q}</label><div class="yn" data-k="${k}">` +
-        ["Yes", "No", "WR"]
+        ["Yes", "No", "NR"]
           .map(
             (v) =>
               `<button data-v="${v}" class="${D[k] == v ? v : ""}">${v}</button>`,
@@ -1473,7 +1473,7 @@ document.addEventListener("click", (ev) => {
   if (t.closest("#nav button")) {
     return tab(t.closest("#nav button").dataset.t);
   }
-  // Yes/No/WR buttons
+  // Yes/No/NR buttons
   const b = t.closest(".yn button");
   if (b && b.parentNode.dataset.vi != null) {
     // Voucher "signed by authorizer / receiver" Yes/No buttons
