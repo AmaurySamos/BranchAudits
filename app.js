@@ -596,9 +596,11 @@ function scopeCard() {
 function updateNav() {
   const any = D.sFin || D.sTech;
   const show = { 0: true, 1: any, 2: any, 3: D.sFin, 4: D.sTech, 5: D.sTech };
-  document
-    .querySelectorAll("#nav button")
-    .forEach((b) => (b.style.display = show[b.dataset.t] ? "" : "none"));
+  document.querySelectorAll("#nav button").forEach((b) => {
+    b.style.display = show[b.dataset.t] ? "" : "none";
+    const S = SECTIONS[b.dataset.t]; // tick (via CSS .done) on tabs already submitted
+    b.classList.toggle("done", !!(S && D.done && D.done[S.key]));
+  });
   if (!show[D._t || "0"]) D._t = "0";
 }
 // ===== OUTSTANDING VOUCHERS LIST (Cash tab) =====
@@ -636,51 +638,489 @@ function voucherList() {
     "</div>"
   );
 }
+// ===== CASH COUNT SHEETS (one per cashier / DigiWallet / petty cash / vault) =====
+// every field that belongs to ONE count sheet: copied when saved, cleared for the next sheet
+const CASH_KEYS = [
+  ...LO.map((d) => "l" + d),
+  ...RO.map(([d]) => "r" + d),
+  ...CU.map((d) => "c" + d),
+  ...CU.map((d) => "u" + d),
+  "chk",
+  "visa",
+  "vch",
+  "auth",
+  "oth",
+  "cnote",
+  "sCREC",
+  "crecnote",
+];
+// true when the sheet on screen has anything typed in it (vch is ignored: it is auto-calculated)
+const cashHasData = () =>
+  ["cashType", "cashName", ...CASH_KEYS.filter((k) => k !== "vch")].some(
+    (k) => D[k] !== undefined && D[k] !== "",
+  ) || (D.vouchers || []).some((v) => parseFloat(v.amt));
+// Saves the sheet on screen into D.cashCounts (everything: denominations, vouchers, reconcile) and clears it for the next one
 function saveCashCount() {
   if (!D.cashType) {
     alert("Please select a count type.");
-    return;
+    return false;
   }
   if (!(D.cashName || "").trim()) {
     alert("Please enter a name.");
-    return;
+    return false;
+  }
+  if (!D.sCREC) {
+    alert("Please answer 'Cash reconciled?' for this count.");
+    return false;
+  }
+  if (D.sCREC === "No" && !(D.crecnote || "").trim()) {
+    alert("Please explain why this count did not reconcile.");
+    return false;
   }
   const c = calc();
-  D.cashCounts.push({
+  const snap = {
     type: D.cashType,
     name: D.cashName,
     counted: c.T,
     authorized: n("auth"),
     variance: c.V,
-    total: c.T,
-    cash: {
-      l001: D["l0.01"] || "",
-      l005: D["l0.05"] || "",
-      l010: D["l0.1"] || "",
-      l025: D["l0.25"] || "",
-      l050: D["l0.5"] || "",
-      l100: D["l1"] || "",
-    },
-  });
+    total: c.T, // (names used by the Saved Cash Counts list)
+    tot: c,
+    vouchers: JSON.parse(JSON.stringify(D.vouchers || [])),
+  };
+  CASH_KEYS.forEach((k) => (snap[k] = D[k]));
+  D.cashCounts.push(snap);
   clearCashForm();
   save();
   R();
   tab("3");
+  return true;
 }
 function clearCashForm() {
   D.cashType = "";
   D.cashName = "";
-  [
-    ...LO.map((d) => "l" + d),
-    ...RO.map(([d]) => "r" + d),
-    ...CU.map((d) => "c" + d),
-    ...CU.map((d) => "u" + d),
-  ].forEach((k) => (D[k] = ""));
-  D.chk = "";
-  D.vch = "";
-  D.auth = "";
-  D.oth = "";
-  D.cnote = "";
+  CASH_KEYS.forEach((k) => delete D[k]);
+  D.vouchers = []; // voucherList() adds one blank line
+}
+
+// ===== PER-TAB SUBMISSION =====
+// Every section tab is submitted on its own. Info (branch, date, auditor, managers) travels with each one.
+// SECTIONS: tab number -> {key, name, need() = is this section part of the audit (ticked on Info)}
+const SECTIONS = {
+  3: { key: "cash", name: "Cash", need: () => D.sFin },
+  4: { key: "inventory", name: "Inventory", need: () => D.sTech },
+  5: { key: "security", name: "Security", need: () => D.sTech },
+  1: { key: "obs", name: "Observations", need: () => D.sFin || D.sTech },
+  2: { key: "findings", name: "Findings", need: () => D.sFin || D.sTech },
+};
+const SECTION_ORDER = ["3", "4", "5", "1", "2"]; // same order as the tab buttons
+const uid = () =>
+  crypto.randomUUID
+    ? crypto.randomUUID()
+    : Date.now() + "-" + Math.random().toString(36).slice(2);
+// One ID for the whole audit. Each section's rows use  <auditId>-<section>  so resubmitting a section REPLACES its rows (no duplicates).
+const auditId = () => D.auditId || (D.auditId = uid());
+const INFO_H = [
+  "Branch",
+  "Audit Date",
+  "Auditors",
+  "Sr. Staff",
+  "Zone Admin",
+  "Zone Manager",
+];
+const infoV = () => [
+  D.branch,
+  D.adate,
+  D.auditor,
+  D.sr || "",
+  D.zadmin || "",
+  D.zmgr || "",
+];
+const scopeText = () =>
+  [D.sFin ? "Financial" : "", D.sTech ? "Technical" : ""]
+    .filter(Boolean)
+    .join(" + ");
+// Checks the Info tab. Returns false (after telling the auditor) if something is missing.
+function infoOk() {
+  if (!D.sFin && !D.sTech) {
+    alert(
+      "Please tick Section 1 (Financial) and/or Section 2 (Technical) on the Info tab.",
+    );
+    tab("0");
+    return false;
+  }
+  for (const k of ["branch", "adate", "auditor"])
+    if (!(D[k] || "").trim()) {
+      alert("Please complete Branch, Audit date and Auditor on the Info tab.");
+      tab("0");
+      return false;
+    }
+  return true;
+}
+// BUILD.<section>(sid, at) = validates ONE section and returns the Google Sheet tabs it writes (or null if something is missing)
+const BUILD = {
+  cash(sid, at) {
+    if (cashHasData() && !saveCashCount()) return null; // the sheet on screen is saved automatically
+    const cs = D.cashCounts || [];
+    if (!cs.length) {
+      alert("Please save at least one cash count first.");
+      return null;
+    }
+    const crows = cs.map((x) => {
+      const T = x.tot || {};
+      return [
+        sid,
+        D.branch,
+        D.adate,
+        x.name,
+        x.type,
+        T.L ?? "",
+        T.Rl ?? "",
+        T.C ?? "",
+        T.U ?? "",
+        parseFloat(x.chk) || 0,
+        parseFloat(x.visa) || 0,
+        parseFloat(x.vch) || 0,
+        T.T ?? x.total,
+        parseFloat(x.auth) || 0,
+        T.S ?? "",
+        parseFloat(x.oth) || 0,
+        T.V ?? x.variance,
+        x.sCREC || "",
+        x.sCREC === "No" ? x.crecnote || "" : "",
+        x.cnote || "",
+      ];
+    });
+    const vrows = [];
+    cs.forEach((x) =>
+      (x.vouchers || [])
+        .filter((v) => parseFloat(v.amt) || v.type || v.purpose)
+        .forEach((v) =>
+          vrows.push([
+            sid,
+            D.branch,
+            D.adate,
+            v.date || "",
+            v.type || "",
+            v.ref || "",
+            v.purpose || "",
+            parseFloat(v.amt) || 0,
+            v.auth || "",
+            v.recv || "",
+            v.signed || "",
+            `${x.name} (${x.type})`,
+          ]),
+        ),
+    );
+    return {
+      "Cash Counts": {
+        headers: [
+          "Submission ID",
+          "Branch",
+          "Audit Date",
+          "Name",
+          "Type",
+          "Loose Coin",
+          "Rolled Coin",
+          "Currency",
+          "USD (BZD)",
+          "Checks",
+          "Visa",
+          "Vouchers",
+          "Total Counted",
+          "Authorized Amount",
+          "Short/(Over)",
+          "Other Verified",
+          "Variance",
+          "Reconciled",
+          "Reconcile Comment",
+          "Notes",
+        ],
+        rows: crows,
+      },
+      Vouchers: {
+        headers: [
+          "Submission ID",
+          "Branch",
+          "Audit Date",
+          "Voucher Date",
+          "Item",
+          "Voucher #",
+          "Purpose",
+          "Amount",
+          "Authorizer",
+          "Receiver",
+          "Signed",
+          "Count Sheet",
+        ],
+        rows: vrows,
+      },
+    };
+  },
+  inventory(sid, at) {
+    const items = (D.inventory || []).filter(
+      (r) => r.physical !== undefined && r.physical !== "",
+    );
+    if (!items.length) {
+      alert("Please count at least one inventory item before submitting.");
+      return null;
+    }
+    return {
+      "Inventory Lines": {
+        headers: [
+          "Submission ID",
+          "Branch",
+          "Audit Date",
+          "Inventory Code",
+          "Inventory Name",
+          "Storage Area",
+          "Stock",
+          "Physical Count",
+          "Variance",
+          "Comment",
+          "Condition",
+          "Location",
+          "Vault/Storage Count",
+          "Display/Floor Count",
+          "Sold (not yet in system)",
+        ],
+        rows: items.map((r) => [
+          sid,
+          D.branch,
+          D.adate,
+          r.sku || "",
+          r.item || "",
+          "",
+          Number(r.stock) || 0,
+          Number(r.physical) || 0,
+          (Number(r.physical) || 0) - (Number(r.stock) || 0),
+          r.comment || "",
+          "",
+          "",
+          Number(r.vault) || 0,
+          Number(r.floor) || 0,
+          Number(r.sold) || 0,
+        ]),
+      },
+    };
+  },
+  security(sid, at) {
+    const miss = secYN()
+      .filter((x) => !D[secKey(x[0])])
+      .map((x) => x[0]);
+    if (miss.length) {
+      alert(
+        "Please answer all Security checks (Yes / No).\n\n" +
+          miss.length +
+          " missing: " +
+          miss.join(", "),
+      );
+      return null;
+    }
+    return {
+      "Security Checks": {
+        headers: [
+          "Submission ID",
+          "Submitted At",
+          "Branch",
+          "Audit Date",
+          "Auditor",
+          ...SECI.map((x) => x[0] + " " + x[2].slice(0, 45)),
+        ],
+        rows: [
+          [
+            sid,
+            at,
+            D.branch,
+            D.adate,
+            D.auditor,
+            ...SECI.map((x) => (secVisible(x) ? D[secKey(x[0])] || "" : "")),
+          ],
+        ],
+      },
+      "Employee Access": {
+        headers: [
+          "Submission ID",
+          "Branch",
+          "Audit Date",
+          "Employee",
+          "Job Title",
+          "Has Alarm Code",
+          "Alarm Code Unique & Confidential",
+          "Has Branch Office Key",
+          "Safe Access Level",
+        ],
+        rows: (D._emp || [])
+          .filter((r) => r.name)
+          .map((r) => [
+            sid,
+            D.branch,
+            D.adate,
+            r.name || "",
+            r.title || "",
+            r.alarm || "",
+            r.unique || "",
+            r.key || "",
+            r.safe || "",
+          ]),
+      },
+    };
+  },
+  obs(sid, at) {
+    const bad = O.filter(
+      (o, i) =>
+        inScope(OBS_SCOPE[o.g]) &&
+        o.t === "!" &&
+        D["o" + i] === "No" &&
+        !(D["o" + i + "_comment"] || "").trim(),
+    );
+    if (bad.length) {
+      alert(
+        "Please provide comments for all No responses.\n\n" +
+          bad.length +
+          " missing.",
+      );
+      return null;
+    }
+    // answer (+ its comment, which the old submit never sent)
+    const val = (o, i) => {
+      if (!inScope(OBS_SCOPE[o.g]) || D["o" + i] === undefined) return "";
+      const cm = (D["o" + i + "_comment"] || "").trim();
+      return cm ? D["o" + i] + " | " + cm : D["o" + i];
+    };
+    return {
+      Observations: {
+        headers: [
+          "Submission ID",
+          "Submitted At",
+          ...INFO_H,
+          ...O.map((o) => o.q),
+        ],
+        rows: [[sid, at, ...infoV(), ...O.map(val)]],
+      },
+    };
+  },
+  findings(sid, at) {
+    const miss = FL.filter((x) => inScope(x.sec) && !D["f" + x.id]).map(
+      (x) => x.id,
+    );
+    if (miss.length) {
+      alert(
+        "Please answer all findings (Yes / No / WR).\n\n" +
+          miss.length +
+          " missing: " +
+          miss.join(", "),
+      );
+      return null;
+    }
+    return {
+      Findings: {
+        headers: [
+          "Submission ID",
+          "Submitted At",
+          ...INFO_H,
+          ...FL.map((x) => x.id + " " + x.q.slice(0, 45)),
+        ],
+        rows: [
+          [
+            sid,
+            at,
+            ...infoV(),
+            ...FL.map((x) => (inScope(x.sec) ? D["f" + x.id] || "" : "")),
+          ],
+        ],
+      },
+    };
+  },
+};
+// SUBMIT THE TAB YOU ARE ON: validates it, adds it to the upload queue and marks it done. Other tabs are untouched.
+function submitTab() {
+  const S = SECTIONS[D._t || "0"];
+  if (!S) {
+    alert(
+      "Open a section tab (Cash, Inventory, Security, Observations or Findings) to submit it.",
+    );
+    return;
+  }
+  if (!infoOk()) return;
+  const at = new Date().toISOString(),
+    sid = auditId() + "-" + S.key;
+  const tabs = BUILD[S.key](sid, at);
+  if (!tabs) return;
+  const rec = {
+    token: TOKEN,
+    submissionId: sid,
+    section: S.key,
+    tabs: {
+      // one row per submitted section: the full Info + which section + when
+      "Audit Log": {
+        headers: [
+          "Submission ID",
+          "Audit ID",
+          "Section",
+          "Submitted At",
+          ...INFO_H,
+          "Audit Scope",
+        ],
+        rows: [[sid, auditId(), S.name, at, ...infoV(), scopeText()]],
+      },
+      ...tabs,
+    },
+  };
+  setQ(
+    getQ()
+      .filter((r) => r.submissionId !== sid)
+      .concat(rec),
+  ); // resubmitting replaces the waiting copy
+  (D.done = D.done || {})[S.key] = { sid, at, sent: false };
+  save();
+  updateNav();
+  updateStatus();
+  updateSubmitBtn();
+  flush(true);
+}
+// "Save for later" button: everything is already saved on the phone after each change; this just confirms it
+function saveLater() {
+  save();
+  const todo = SECTION_ORDER.filter(
+    (t) => SECTIONS[t].need() && !(D.done || {})[SECTIONS[t].key],
+  ).map((t) => SECTIONS[t].name);
+  alert(
+    "Saved on this device. Nothing is lost if you close the app.\n\n" +
+      (todo.length
+        ? "Still to submit: " + todo.join(", ")
+        : "All sections submitted."),
+  );
+}
+// Bottom-right button: "Submit Cash", "Resubmit Inventory" ... hidden on the Info tab
+function updateSubmitBtn() {
+  const b = $("submitBtn");
+  if (!b) return;
+  const S = SECTIONS[D._t || "0"];
+  b.style.display = S ? "" : "none";
+  if (S)
+    b.textContent = ((D.done || {})[S.key] ? "Resubmit " : "Submit ") + S.name;
+}
+// Section status list on the Info tab
+function statusInner() {
+  const rows = SECTION_ORDER.filter((t) => SECTIONS[t].need()).map((t) => {
+    const S = SECTIONS[t],
+      d = (D.done || {})[S.key];
+    const when = d
+      ? new Date(d.at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
+    return `<div class="st"><span>${S.name}</span><span class="${d ? (d.sent ? "ok" : "wait") : "todo"}">${d ? (d.sent ? "&#10003; Uploaded " : "&#9203; Waiting to upload ") + when : "Not submitted"}</span></div>`;
+  });
+  return rows.join("") || "Tick a section above to begin.";
+}
+const statusCard = () =>
+  `<h3>Section status</h3><div class="f" id="statusWrap">${statusInner()}</div>`;
+function updateStatus() {
+  const el = $("statusWrap");
+  if (el) el.innerHTML = statusInner();
 }
 // R() = RENDER. Rebuilds every tab from D (Info, Observations, Findings, Cash, Inventory, Security). Sections not ticked are skipped.
 function R() {
@@ -710,6 +1150,8 @@ function R() {
     </div>` +
     f("zmgr", "Store Manager in charge") +
     scopeCard() +
+    statusCard() +
+    '<button class="add" id="newAuditBtn">Start new audit (clear everything)</button>' +
     '</section><section id="s1">';
   //Observation Tab Section Structure
   let g = "";
@@ -907,6 +1349,7 @@ function tab(t) {
   if (t !== "4") {
     scrollTo(0, 0);
   }
+  updateSubmitBtn();
 }
 // n("key") = number typed in a field (0 if blank) | $$ formats a number as money
 const n = (k) => parseFloat(D[k]) || 0,
@@ -1091,6 +1534,10 @@ document.addEventListener("click", (ev) => {
     }
     return;
   }
+  if (t.id === "newAuditBtn") {
+    newAudit();
+    return;
+  }
   if (t.id === "saveCashCount") {
     saveCashCount();
     return;
@@ -1112,12 +1559,22 @@ document.addEventListener("click", (ev) => {
 });
 // "Clear form" button: wipes D after confirmation
 function newAudit() {
-  if (!confirm("Clear everything on this form?")) return;
-  D = {
-    _inv: [{}],
-    _emp: [{}],
-    cashCounts: [],
-  };
+  const todo = SECTION_ORDER.filter(
+    (t) => SECTIONS[t].need() && !(D.done || {})[SECTIONS[t].key],
+  ).map((t) => SECTIONS[t].name);
+  let msg = "Start a new audit and clear this form?";
+  if (todo.length)
+    msg =
+      "NOT submitted yet: " +
+      todo.join(", ") +
+      ".\n\nClearing will lose them. Clear anyway?";
+  else if (getQ().length)
+    msg +=
+      "\n\n" +
+      getQ().length +
+      " section(s) are still waiting to upload. They stay queued and will send when you have signal.";
+  if (!confirm(msg)) return;
+  D = { _inv: [{}], _emp: [{}], cashCounts: [] };
   save();
   R();
 }
@@ -1134,275 +1591,6 @@ const getQ = () => {
       localStorage.setItem(QK, JSON.stringify(a));
     } catch (e) {}
   };
-// SUBMIT: validates, builds one set of rows per Google Sheet tab (Branch Audits, Inventory Lines, Security Checks, Employee Access),
-// adds them to the queue, clears the form and tries to upload
-function submit() {
-  if (!D.sFin && !D.sTech) {
-    alert(
-      "Please tick Section 1 (Financial) and/or Section 2 (Technical) on the Info tab.",
-    );
-    tab("0");
-    return;
-  }
-  for (const k of ["branch", "adate", "auditor"])
-    if (!(D[k] || "").trim()) {
-      alert(
-        "Please complete Branch, Audit date and Auditor(s) on the Info tab.",
-      );
-      return;
-    }
-  const miss = FL.filter((x) => inScope(x.sec) && !D["f" + x.id]).map(
-    (x) => x.id,
-  );
-  if (miss.length) {
-    alert(
-      "Please answer all findings (Yes / No / WR).\n\n" +
-        miss.length +
-        " missing: " +
-        miss.join(", "),
-    );
-    return;
-  }
-
-  const missSec = secYN()
-    .filter((x) => !D[secKey(x[0])])
-    .map((x) => x[0]);
-  if (missSec.length) {
-    alert(
-      "Please answer all Security checks (Yes / No).\n\n" +
-        missSec.length +
-        " missing: " +
-        missSec.join(", "),
-    );
-    tab("5");
-    return;
-  }
-  if (D.sFin && D.sCREC === "No" && !(D.crecnote || "").trim()) {
-    alert("Please explain why the cash did not reconcile.");
-    tab("3");
-    return;
-  }
-  const missingComments = [];
-
-  O.forEach((o, i) => {
-    if (
-      inScope(OBS_SCOPE[o.g]) &&
-      o.t === "!" &&
-      D["o" + i] === "No" &&
-      !(D["o" + i + "_comment"] || "").trim()
-    ) {
-      missingComments.push(o.q);
-    }
-  });
-  if (missingComments.length) {
-    alert("Please provide comments for all No responses.");
-    return;
-  }
-
-  const c = calc(),
-    id = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Date.now() + "-" + Math.random().toString(36).slice(2),
-    at = new Date().toISOString();
-  const H = [
-    "Submission ID",
-    "Submitted At",
-    "Branch",
-    "Audit Date",
-    "Auditors",
-    "Sr. Staff",
-    "Zone Admin",
-    "Zone Manager",
-    ...O.map((o) => o.q),
-    ...FL.map((x) => x.id + " " + x.q.slice(0, 45)),
-    "Loose Coin",
-    "Rolled Coin",
-    "Currency",
-    "USD (BZD)",
-    "Checks",
-    "Vouchers",
-    "Total Counted",
-    "Authorized Amount",
-    "Cash Short/(Over)",
-    "Other Verified",
-    "Cash Variance",
-    "Cash Notes",
-    "Audit Scope", // NEW last column: Financial / Technical / both
-    "Cash Reconciled",
-    "Reconcile Comment",
-    "Visa Amount",
-  ];
-  const row = [
-    id,
-    at,
-    D.branch,
-    D.adate,
-    D.auditor,
-    D.sr || "",
-    D.zadmin || "",
-    D.zmgr || "",
-    ...O.map((o, i) =>
-      inScope(OBS_SCOPE[o.g]) && D["o" + i] !== undefined ? D["o" + i] : "",
-    ),
-    ...FL.map((x) => (inScope(x.sec) ? D["f" + x.id] || "" : "")),
-    // cash columns stay blank when Section 1 (Financial) was not part of this audit
-    ...[
-      c.L,
-      c.Rl,
-      c.C,
-      c.U,
-      n("chk"),
-      n("vch"),
-      c.T,
-      n("auth"),
-      c.S,
-      n("oth"),
-      c.V,
-      // [D.cnote, voucherText()].filter(Boolean).join(" | "),
-    ].map((v) => (D.sFin ? v : "")),
-    [D.sFin ? "Financial" : "", D.sTech ? "Technical" : ""]
-      .filter(Boolean)
-      .join(" + "),
-    D.sFin ? D.sCREC || "" : "",
-    D.sFin && D.sCREC === "No" ? D.crecnote || "" : "",
-    D.sFin ? n("visa") : "",
-  ];
-  // Inventory lines = every item that was counted (D.inventory is filled by "Load Inventory")
-  const items = D.sTech
-    ? (D.inventory || [])
-        .filter((r) => r.physical !== undefined && r.physical !== "")
-        .map((r) => [
-          id,
-          D.branch,
-          D.adate,
-          r.sku || "",
-          r.item || "",
-          "",
-          Number(r.stock) || 0,
-          Number(r.physical) || 0,
-          (Number(r.physical) || 0) - (Number(r.stock) || 0),
-          r.comment || "",
-          "",
-          "",
-          Number(r.vault) || 0,
-          Number(r.floor) || 0,
-          Number(r.sold) || 0,
-        ])
-    : [];
-  const SH = [
-    "Submission ID",
-    "Submitted At",
-    "Branch",
-    "Audit Date",
-    "Auditor",
-    ...SECI.map((x) => x[0] + " " + x[2].slice(0, 45)),
-  ];
-  const srow = [
-    id,
-    at,
-    D.branch,
-    D.adate,
-    D.auditor,
-    ...SECI.map((x) => (D.sTech && secVisible(x) ? D[secKey(x[0])] || "" : "")),
-  ];
-  const emps = (D.sTech ? D._emp || [] : [])
-    .filter((r) => r.name)
-    .map((r) => [
-      id,
-      D.branch,
-      D.adate,
-      r.name || "",
-      r.title || "",
-      r.alarm || "",
-      r.unique || "",
-      r.key || "",
-      r.safe || "",
-    ]);
-  // One row per voucher for the "Vouchers" tab
-  const vrows = (D.vouchers || [])
-    .filter((v) => parseFloat(v.amt) || v.type || v.purpose)
-    .map((v) => [
-      id,
-      D.branch,
-      D.adate,
-      v.date || "",
-      v.type || "",
-      v.ref || "",
-      v.purpose || "",
-      parseFloat(v.amt) || 0,
-      v.auth || "",
-      v.recv || "",
-      v.signed || "",
-    ]);
-  const rec = {
-    token: TOKEN,
-    submissionId: id,
-    tabs: {
-      "Branch Audits": {
-        headers: H,
-        rows: [row],
-      },
-      "Security Checks": { headers: SH, rows: D.sTech ? [srow] : [] },
-      Vouchers: {
-        headers: [
-          "Submission ID",
-          "Branch",
-          "Audit Date",
-          "Voucher Date",
-          "Item",
-          "Voucher #",
-          "Purpose",
-          "Amount",
-          "Authorizer",
-          "Receiver",
-          "Signed",
-        ],
-        rows: D.sFin ? vrows : [],
-      },
-      "Employee Access": {
-        headers: [
-          "Submission ID",
-          "Branch",
-          "Audit Date",
-          "Employee",
-          "Job Title",
-          "Has Alarm Code",
-          "Alarm Code Unique & Confidential",
-          "Has Branch Office Key",
-          "Safe Access Level",
-        ],
-        rows: emps,
-      },
-      "Inventory Lines": {
-        headers: [
-          "Submission ID",
-          "Branch",
-          "Audit Date",
-          "Inventory Code",
-          "Inventory Name",
-          "Storage Area",
-          "Stock",
-          "Physical Count",
-          "Variance",
-          "Comment",
-          "Condition",
-          "Location",
-          "Vault/Storage Count",
-          "Display/Floor Count",
-          "Sold (not yet in system)",
-        ],
-        rows: items,
-      },
-    },
-  };
-  const q = getQ();
-  q.push(rec);
-  setQ(q);
-  D = { _inv: [{}], _emp: [{}] };
-  save();
-  R();
-  flush(true);
-}
 // Progress bar = answered findings + security Yes/No checks in the chosen sections
 function updateProgress() {
   // const fl = FL.filter((x) => inScope(x.sec)); // findings in the chosen sections
@@ -1469,6 +1657,7 @@ async function flush(fresh) {
   const q = getQ();
   if (!q.length) return;
   let left = [];
+  const ok = []; // names of the sections that uploaded this time
   if (navigator.onLine)
     for (const r of q) {
       try {
@@ -1479,18 +1668,36 @@ async function flush(fresh) {
         });
         const j = await x.json();
         if (!j.ok) left.push(r);
+        else {
+          ok.push(r.tabs["Audit Log"].rows[0][2]);
+          // mark that section as uploaded (only if it has not been resubmitted since)
+          if (
+            r.section &&
+            D.done &&
+            D.done[r.section] &&
+            D.done[r.section].sid === r.submissionId
+          )
+            D.done[r.section].sent = true;
+        }
       } catch (err) {
         left.push(r);
       }
     }
   else left = q;
   setQ(left);
+  save();
+  updateStatus();
   if (left.length)
     alert(
       left.length +
-        " audit(s) waiting to upload.\n\nThey will send automatically when you have signal. Keep the app on this device until it confirms the upload.",
+        " section(s) waiting to upload.\n\nThey will send automatically when you have signal. Keep the app on this device until it confirms the upload.",
     );
-  else alert("Uploaded to the master sheet.");
+  else
+    alert(
+      "Uploaded to the master sheet" +
+        (ok.length ? ": " + ok.join(", ") : "") +
+        ".",
+    );
 }
 // Retry uploads automatically when signal returns
 addEventListener("online", () => flush());

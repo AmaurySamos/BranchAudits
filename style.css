@@ -594,3 +594,32 @@ nav button:active {
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
+/* Per-tab submit: ticks, status list, wider Save button on the Info tab */
+nav button.done::after {
+  content: " \2713";
+  color: var(--ok);
+}
+.st {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 14px;
+}
+.st:last-child {
+  border-bottom: 0;
+}
+.st .ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+.st .wait {
+  color: #d97706;
+  font-weight: 600;
+}
+.st .todo {
+  color: var(--muted);
+}
+.bar:has(#submitBtn[style*="none"]) .sec {
+  flex: 1;
+}
