@@ -1220,7 +1220,7 @@ function R() {
   });
   //Finding Tab structure
   h +=
-    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>WR</b> = area not reviewed</div>';
+    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>NR</b> = area not reviewed</div>';
   FIN.forEach((s, si) => {
     if (!inScope(FIN_SCOPE[s[0]])) return; // skip findings sections outside the chosen sections
     h += `<h3>${si + 1}.00 ${s[0]}</h3>`;
