@@ -799,14 +799,14 @@ function R() {
           <div class="f">
               <h3>Other</h3>
               ${f("chk", "Checks total ($)", "number")}
-              ${voucherList()}
+              ${f("visa", "Visa amount ($)", "number")}
               ${f("auth", "Authorized amount ($)", "number")}
               ${f(
                 "oth",
                 "Other amount verified, e.g. CSR floats ($)",
                 "number",
               )}
-              ${f("cnote", "Cash notes")}
+               ${voucherList()}
           </div>
       </div>
           <div class="cash-col">
@@ -825,6 +825,14 @@ function R() {
                     ${tot("tT", "Total counted & verified")}
                     ${tot("tS", "Cash short/(over) vs authorized")}
                     ${tot("tV", "Variance after other verified")}
+                    <label>Cash reconciled?</label>
+                    <div class="yn pos" data-k="sCREC">
+                        ${["Yes", "No"].map((v) => `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">${v}</button>`).join("")}
+                    </div>
+                    <div data-cond="CREC|No">
+                        <label>Reason the cash did not reconcile</label>
+                        <textarea data-k="crecnote">${e(D.crecnote)}</textarea>
+                    </div>
                 </div>
             </div>
           </div>
@@ -870,7 +878,7 @@ function calc() {
     Rl = RO.reduce((a, [d, v]) => a + n("r" + d) * v, 0),
     C = CU.reduce((a, d) => a + n("c" + d) * d, 0),
     U = CU.reduce((a, d) => a + n("u" + d) * d * 2, 0);
-  const T = L + Rl + C + U + n("chk") + n("vch"),
+  const T = L + Rl + C + U + n("chk") + n("visa") + n("vch"),
     S = T - n("auth"),
     V = S + n("oth");
   O.forEach((o, i) => {
@@ -1122,7 +1130,16 @@ function submit() {
     tab("5");
     return;
   }
-
+  if (D.sFin && !D.sCREC) {
+    alert("Please answer 'Cash reconciled?' on the Cash tab.");
+    tab("3");
+    return;
+  }
+  if (D.sFin && D.sCREC === "No" && !(D.crecnote || "").trim()) {
+    alert("Please explain why the cash did not reconcile.");
+    tab("3");
+    return;
+  }
   const missingComments = [];
 
   O.forEach((o, i) => {
@@ -1169,6 +1186,9 @@ function submit() {
     "Cash Variance",
     "Cash Notes",
     "Audit Scope", // NEW last column: Financial / Technical / both
+    "Cash Reconciled",
+    "Reconcile Comment",
+    "Visa Amount",
   ];
   const row = [
     id,
@@ -1196,11 +1216,14 @@ function submit() {
       c.S,
       n("oth"),
       c.V,
-      [D.cnote, voucherText()].filter(Boolean).join(" | "),
+      // [D.cnote, voucherText()].filter(Boolean).join(" | "),
     ].map((v) => (D.sFin ? v : "")),
     [D.sFin ? "Financial" : "", D.sTech ? "Technical" : ""]
       .filter(Boolean)
       .join(" + "),
+    D.sFin ? D.sCREC || "" : "",
+    D.sFin && D.sCREC === "No" ? D.crecnote || "" : "",
+    D.sFin ? n("visa") : "",
   ];
   // Inventory lines = every item that was counted (D.inventory is filled by "Load Inventory")
   const items = D.sTech
