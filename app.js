@@ -628,6 +628,15 @@ function updateNav() {
 }
 // ===== OUTSTANDING VOUCHERS LIST (Cash tab) =====
 const VOUCHER_TYPES = ["Water", "Paper", "Cleaning supplies"]; // suggestions only - you can type anything
+// Adds up every voucher amount (this is the "Outstanding vouchers total")
+const sumVouchers = () =>
+  (D.vouchers || []).reduce((a, v) => a + (parseFloat(v.amt) || 0), 0);
+// Text version of the list, saved inside the Cash Notes column, e.g. "Water: 4; Paper: 5"
+const voucherText = () =>
+  (D.vouchers || [])
+    .filter((v) => parseFloat(v.amt))
+    .map((v) => `${v.type || ""}${v.ref ? " (" + v.ref + ")" : ""}: ${v.amt}`)
+    .join("; ");
 function voucherList() {
   if (!D.vouchers || !D.vouchers.length) D.vouchers = [{}];
   D.vch = sumVouchers(); // "vch" is what calc() adds into Total Counted
