@@ -1,8 +1,9 @@
 // ===== CONFIG =====
 // ENDPOINT = Google Apps Script web app URL | TOKEN = shared secret (must match Code.gs)
 // QK = phone storage key for audits waiting to upload | DK = phone storage key for the saved draft
-const ENDPOINT = "PASTE_WEB_APP_URL_HERE",
-  TOKEN = "PASTE_SHARED_SECRET_HERE",
+const ENDPOINT =
+    "https://script.google.com/macros/s/AKfycbxXOYsqSTfuj9yg1RVszJnhraako57Oa6SuOXbdZaHtY4SFB7fqA8J8YW4j4DewihDp9w/exec",
+  TOKEN = "FY2627_IAbranchAudit",
   QK = "storeAuditQueue_v1",
   DK = "storeAuditDraft_v1";
 // EDIT THESE LISTS to match your branches and auditors
@@ -173,7 +174,7 @@ const OBS = [
     "Other comments",
   ],
 ];
-// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, NR = area not reviewed
+// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, WR = area not reviewed
 const FIN = [
   [
     "SECURITY",
@@ -1004,7 +1005,7 @@ const BUILD = {
     );
     if (miss.length) {
       alert(
-        "Please answer all findings (Yes / No / NR).\n\n" +
+        "Please answer all findings (Yes / No / WR).\n\n" +
           miss.length +
           " missing: " +
           miss.join(", "),
@@ -1220,7 +1221,7 @@ function R() {
   });
   //Finding Tab structure
   h +=
-    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>NR</b> = area not reviewed</div>';
+    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>WR</b> = area not reviewed</div>';
   FIN.forEach((s, si) => {
     if (!inScope(FIN_SCOPE[s[0]])) return; // skip findings sections outside the chosen sections
     h += `<h3>${si + 1}.00 ${s[0]}</h3>`;
@@ -1228,7 +1229,7 @@ function R() {
       const k = "f" + fid(si, qi);
       h +=
         `<div class="f"><label>${fid(si, qi)} ${q}</label><div class="yn" data-k="${k}">` +
-        ["Yes", "No", "NR"]
+        ["Yes", "No", "WR"]
           .map(
             (v) =>
               `<button data-v="${v}" class="${D[k] == v ? v : ""}">${v}</button>`,
@@ -1473,7 +1474,7 @@ document.addEventListener("click", (ev) => {
   if (t.closest("#nav button")) {
     return tab(t.closest("#nav button").dataset.t);
   }
-  // Yes/No/NR buttons
+  // Yes/No/WR buttons
   const b = t.closest(".yn button");
   if (b && b.parentNode.dataset.vi != null) {
     // Voucher "signed by authorizer / receiver" Yes/No buttons
