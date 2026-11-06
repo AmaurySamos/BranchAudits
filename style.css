@@ -556,3 +556,36 @@ nav button:active {
   color: var(--muted);
   margin: 4px 0 2px;
 }
+.reconcile-box {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.cash-save {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #06b6d4;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.saved-counts {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.saved-count {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.saved-count:last-child {
+  border-bottom: 0;
+}

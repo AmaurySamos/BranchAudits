@@ -896,8 +896,22 @@ function R() {
                   ${tot("tT", "Total counted & verified")}
                   ${tot("tS", "Cash short/(over) vs authorized")}
                   ${tot("tV", "Variance after other verified")}
+                  <div class="reconcile-box">
+                    <label>Cash reconciled?</label>
+                    <div class="yn pos" data-k="sCREC">
+                        ${["Yes", "No"]
+                          .map(
+                            (v) =>
+                              `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">
+                                ${v}
+                              </button>`,
+                          )
+                          .join("")}
+                    </div>
+                  </div>
+                </div>
                   <button
-                      class="add"
+                      class="cash-save"
                       id="saveCashCount">
                       Save Cash Count
                   </button>
@@ -916,18 +930,7 @@ function R() {
                         )
                         .join("")}
                     </div>
-                  <label>Cash reconciled?</label>
-                  <div class="yn pos" data-k="sCREC">
-                      ${["Yes", "No"]
-                        .map(
-                          (v) =>
-                            `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">
-                              ${v}
-                            </button>`,
-                        )
-                        .join("")}
-                  </div>
-                </div>
+                  
             </div>
           </div>
   </section>
