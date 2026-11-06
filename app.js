@@ -102,7 +102,7 @@ const OBS = [
     "=Petty Cash variance",
     "?Petty Cash count balanced or consists of immaterial differences",
     "?Petty Cash payments consist of payments to vendors, refund of deposits, refund of installation and change",
-    "?Monthly replenishment of Petty Cash is done",
+    "!Monthly replenishment of Petty Cash is done",
     "@Last date of Petty Cash replenishment",
     "$DigiWallet float, physical cash ($)",
     "$DigiWallet float reconciled amount ($)",
@@ -260,12 +260,10 @@ const FIN_SCOPE = {
 // true when the item's section was ticked on the Info tab
 const inScope = (sec) =>
   !sec || (sec === "fin" && D.sFin) || (sec === "tech" && D.sTech);
-
 const O = [];
 OBS.forEach((g) =>
   g.slice(1).forEach((q) => {
     const m = "$@=?#!".includes(q[0]);
-
     O.push({
       g: g[0],
       t: m ? q[0] : "",
@@ -300,13 +298,8 @@ const e = (s) =>
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;");
 // Builds a labelled input card for answer key k
-const f = (
-  k,
-  l,
-  t,
-  x,
-) => `<div class="f"><label>${l}</label><input data-k="${k}" type="${t || "text"}" 
-    ${t == "number" ? 'step="any" inputmode="decimal"' : ""} ${x || ""} value="${e(D[k])}"></div>`;
+const f = (k, l, t, x) =>
+  `<div class="f"><label>${l}</label><input data-k="${k}" type="${t || "text"}"${t == "number" ? 'step="any" inputmode="decimal"' : ""} ${x || ""} value="${e(D[k])}"></div>`;
 // Builds one cash-count row (label + number box)
 const cg = (k, l) =>
   `<div class="g"><span>${l}</span><input data-k="${k}" type="number" inputmode="numeric" placeholder="count" value="${e(D[k])}"></div>`;
@@ -321,49 +314,33 @@ function renderInventory() {
     const physical = item.physical || "";
     const variance = physical === "" ? 0 : Number(physical) - item.stock;
     h += `
-        <div class="f">
-            <h3>${item.item}</h3>
-            <div>
-                <b>SKU:</b> ${item.sku}
-            </div>
-            <div>
-                <b>System Stock:</b> ${item.stock}
-            </div>
-            <br>
-            <label>Count by location</label>
-            <div class="parts">
-              <div><small>Vault / Storage</small>
-                <input type="number" min="0" inputmode="numeric" data-part="vault" data-idx="${i}" value="${item.vault ?? ""}"></div>
-              <div><small>Display / Floor</small>
-                <input type="number" min="0" inputmode="numeric" data-part="floor" data-idx="${i}" value="${item.floor ?? ""}"></div>
-              <div><small>Sold, not in system yet</small>
-                <input type="number" min="0" inputmode="numeric" data-part="sold" data-idx="${i}" value="${item.sold ?? ""}"></div>
-            </div>
-            <div id="tot_${i}" class="invtot">Total counted: ${physical === "" ? 0 : physical}</div>
-            <div
-                id="var_${i}"
-                style="
-                    margin-top:8px;
-                    font-weight:bold;
-                    color:${variance === 0 ? "#2e7d32" : "#c0392b"};
-              ">
-                Variance: ${variance}
-            </div>
-            <div
-              id="comment_${i}"
-              style="display:${variance !== 0 ? "block" : "none"}"
-            >
-              <label style="margin-top:10px;">
-                  Variance Comment
-              </label>
-
-              <textarea
-                  data-varcomment="${i}"
-                  placeholder="Reason for variance"
-              >${item.comment || ""}</textarea>
-            </div>
-        </div>
-        `;
+      <div class="f">
+          <h3>${item.item}</h3>
+          <div>
+              <b>SKU:</b> ${item.sku}
+          </div>
+          <div>
+              <b>System Stock:</b> ${item.stock}
+          </div>
+          <br>
+          <label>Count by location</label>
+          <div class="parts">
+            <div><small>Vault / Storage</small>
+              <input type="number" min="0" inputmode="numeric" data-part="vault" data-idx="${i}" value="${item.vault ?? ""}"></div>
+            <div><small>Display / Floor</small>
+              <input type="number" min="0" inputmode="numeric" data-part="floor" data-idx="${i}" value="${item.floor ?? ""}"></div>
+            <div><small>Sold, not in system yet</small>
+              <input type="number" min="0" inputmode="numeric" data-part="sold" data-idx="${i}" value="${item.sold ?? ""}"></div>
+          </div>
+          <div id="tot_${i}" class="invtot">Total counted: ${physical === "" ? 0 : physical}</div>
+          <div id="var_${i}" style="margin-top:8px; font-weight:bold; color:${variance === 0 ? "#2e7d32" : "#c0392b"};">
+              Variance: ${variance}
+          </div>
+          <div id="comment_${i}"style="display:${variance !== 0 ? "block" : "none"}">
+            <label style="margin-top:10px;"> Variance Comment </label>
+            <textarea data-varcomment="${i}"placeholder="Reason for variance">${item.comment || ""}</textarea>
+          </div>
+      </div>`;
   });
   return h;
 }
@@ -382,40 +359,34 @@ function inventorySummary() {
   const accuracy = counted
     ? (((counted - variances) / counted) * 100).toFixed(1)
     : "0.0";
-  return `
-    <div class="f">
+  return;
+  `<div class="f">
         <h3>Inventory Summary</h3>
         <div>Total Items: <b>${items.length}</b></div>
         <div>Items Counted: <b id="sumCounted">${counted}</b></div>
         <div>Variances Found: <b id="sumVariance">${variances}</b></div>
         <div>Accuracy: <b id="sumAccuracy">${accuracy}%</b></div>
-    </div>
-    `;
+    </div>`;
 }
 // Refreshes the summary numbers without redrawing the page
 function updateInventorySummary() {
   const items = D.inventory || [];
-
   const counted = items.filter(
     (i) => i.physical !== undefined && i.physical !== "",
   ).length;
-
   const variances = items.filter(
     (i) =>
       i.physical !== undefined &&
       i.physical !== "" &&
       Number(i.physical) !== Number(i.stock),
   ).length;
-
   const accuracy = counted
     ? (((counted - variances) / counted) * 100).toFixed(1)
     : "0.0";
-
   $("sumCounted").textContent = counted;
   $("sumVariance").textContent = variances;
   $("sumAccuracy").textContent = accuracy + "%";
 }
-
 // ===== SECURITY TAB (sections A-D) =====
 // item: [id, type, question, optional [parentId, parentValue] = only shown when parent has that answer]
 // types: y = Yes/No buttons, t = text, c = comments box
@@ -828,125 +799,84 @@ function R() {
   });
   //Cash Tab section structure
   h += `
-  </section>
-  <section id="s3">
-      <div class="f">
-        <h3>Cash Count Information</h3>
-        <label>Count Type</label>
-        <select data-k="cashType">
-            <option value="">Select...</option>
-            <option value="Cashier">
-                Cashier
-            </option>
-            <option value="DigiWallet">
-                DigiWallet
-            </option>
-            <option value="Petty Cash">
-                Petty Cash
-            </option>
-            <option value="Vault">
-                Vault
-            </option>
-        </select>
-        <label>Name</label>
-        <input
-            data-k="cashName"
-            placeholder="Cashier name, Vault name, etc."
-            value="${e(D.cashName)}"
-        >
-      </div>
-      <div class="cash-grid">
-          <div class="cash-col">
-          <div class="f">
-              <h3>Loose coin (count)</h3>
-
-              ${LO.map((d) => cg("l" + d, "$" + d.toFixed(2))).join("")}
-              ${tot("tL", "Total loose coin")}
-          </div>
-          <div class="f">
-              <h3>Rolled coin (number of rolls)</h3>
-              ${RO.map(([d, v]) =>
-                cg("r" + d, `$${d.toFixed(2)} coin ($${v.toFixed(2)} roll)`),
-              ).join("")}
-              ${tot("tR", "Total rolled coin")}
-          </div>
-          <div class="f">
-              <h3>Other</h3>
-              ${f("chk", "Checks total ($)", "number")}
-              ${f("visa", "Visa amount ($)", "number")}
-              ${f("auth", "Authorized amount ($)", "number")}
-              ${f(
-                "oth",
-                "Other amount verified, e.g. CSR floats ($)",
-                "number",
-              )}
-               ${voucherList()}
-          </div>
-      </div>
-          <div class="cash-col">
-                <div class="f">
-                    <h3>BZD currency (count)</h3>
-                    ${CU.map((d) => cg("c" + d, "$" + d)).join("")}
-                    ${tot("tC", "Total currency")}
-                </div>
-                <div class="f">
-                    <h3>USD (count, converted at 2.00)</h3>
-                    ${CU.map((d) => cg("u" + d, "US$" + d)).join("")}
-                    ${tot("tU", "Total USD in BZD")}
-                </div>
-                  <div class="f cash-summary">
-                  <h3>Cash Summary</h3>
-                  ${tot("tT", "Total counted & verified")}
-                  ${tot("tS", "Cash short/(over) vs authorized")}
-                  ${tot("tV", "Variance after other verified")}
-                  <div class="reconcile-box">
-                    <label>Cash reconciled?</label>
-                    <div class="yn pos" data-k="sCREC">
-                        ${["Yes", "No"]
-                          .map(
-                            (v) =>
-                              `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">
-                                ${v}
-                              </button>`,
-                          )
-                          .join("")}
-                    </div>
-                  </div>
-                    <div class="reconcile-note"
-                      data-cond="sCREC|No"
-                      style="display:none">
-                      <label>Reason the cash did not reconcile</label>
-                      <textarea
-                          data-k="crecnote"
-                          placeholder="Explain the variance, shortage, overage, missing voucher, etc."
-                      >${e(D.crecnote)}</textarea>
-                    </div>
-                </div>
-                  <button
-                      class="cash-save"
-                      id="saveCashCount">
-                      Save Cash Count
-                  </button>
-                    <div class="f">
-                      <h3>Saved Cash Counts</h3>
-                      ${(D.cashCounts || [])
-                        .map(
-                          (c, i) => `
-                              <div>
-                                  ${i + 1}. ${c.type}
-                                  -
-                                  ${c.name}
-                                  ($${c.total.toFixed(2)})
-                              </div>
-                          `,
-                        )
-                        .join("")}
-                    </div>
-                  
+    </section>
+    <section id="s3">
+        <div class="f">
+          <h3>Cash Count Information</h3>
+          <label>Count Type</label>
+          <select data-k="cashType">
+              <option value="">Select...</option>
+              <option value="Cashier"> Cashier </option>
+              <option value="DigiWallet"> DigiWallet </option>
+              <option value="Petty Cash"> Petty Cash </option>
+              <option value="Vault"> Vault </option>
+          </select>
+          <label>Name</label>
+          <input data-k="cashName" placeholder="Cashier name, Vault name, etc." value="${e(D.cashName)}">
+          <label>Authorized Amount ($)</label>
+          <input data-k="auth" type="number" step="any" inputmode="decimal" value="${e(D.auth)}">
+        </div>
+        <div class="cash-grid">
+            <div class="cash-col">
+            <div class="f">
+                <h3>Loose coin (count)</h3>
+                ${LO.map((d) => cg("l" + d, "$" + d.toFixed(2))).join("")}
+                ${tot("tL", "Total loose coin")}
             </div>
-          </div>
-  </section>
-`;
+            <div class="f">
+                <h3>Rolled coin (number of rolls)</h3>
+                ${RO.map(([d, v]) => cg("r" + d, `$${d.toFixed(2)} coin ($${v.toFixed(2)} roll)`)).join("")}
+                ${tot("tR", "Total rolled coin")}
+            </div>
+            <div class="f">
+                <h3>Other</h3>
+                ${f("chk", "Checks total ($)", "number")}
+                ${f("visa", "Visa amount ($)", "number")}
+                ${f("oth", "Other amount verified, e.g. CSR floats ($)", "number")}
+                ${voucherList()}
+            </div>
+        </div>
+        <div class="cash-col">
+            <div class="f">
+                <h3>BZD currency (count)</h3>
+                ${CU.map((d) => cg("c" + d, "$" + d)).join("")}
+                ${tot("tC", "Total currency")}
+            </div>
+            <div class="f">
+                <h3>USD (count, converted at 2.00)</h3>
+                ${CU.map((d) => cg("u" + d, "US$" + d)).join("")}
+                ${tot("tU", "Total USD in BZD")}
+            </div>
+            <div class="f cash-summary">
+              <h3>Cash Summary</h3>
+              ${tot("tT", "Total counted & verified")}
+              ${tot("tS", "Cash short/(over) vs authorized")}
+              ${tot("tV", "Variance after other verified")}
+              <div class="reconcile-box">
+                <label>Cash reconciled?</label>
+                <div class="yn pos" data-k="sCREC">
+                    ${["Yes", "No"].map((v) => `<button data-v="${v}" class="${D.sCREC == v ? v : ""}">${v}</button>`).join("")}
+                </div>
+              </div>
+              <div class="reconcile-note"
+                data-cond="sCREC|No"
+                style="display:none">
+                <label>Reason the cash did not reconcile</label>
+                <textarea data-k="crecnote" placeholder="Explain the variance, shortage, overage, missing voucher, etc.">${e(D.crecnote)}</textarea>
+              </div>
+              </div>
+                <button
+                    class="cash-save"
+                    id="saveCashCount">
+                    Save Cash Count
+                </button>
+                <div class="f">
+                  <h3>Saved Cash Counts</h3>
+                  ${(D.cashCounts || []).map((c, i) => `<div>${i + 1}. ${c.type}-${c.name}($${c.total.toFixed(2)})</div>`).join("")}
+                </div> 
+              </div>
+            </div>
+    </section>`;
   //Inventory Tab Section Structure
   h += `
     <section id="s4">
