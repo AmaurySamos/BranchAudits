@@ -1058,11 +1058,13 @@ const BUILD = {
     // Prevent submission if inventory items have not been counted
     if (D.sTech && D.inventory && D.inventory.length) {
       const pending = D.inventory.filter((i) => {
-        const entered =
-          i.vault !== undefined ||
-          i.floor !== undefined ||
-          i.sold !== undefined;
-        return !entered;
+        const total =
+          (Number(i.vault) || 0) +
+          (Number(i.floor) || 0) +
+          (Number(i.sold) || 0);
+        return (
+          i.vault === undefined && i.floor === undefined && i.sold === undefined
+        );
       });
       if (pending.length) {
         alert(
@@ -1496,7 +1498,7 @@ document.addEventListener("input", (ev) => {
     const it = D.inventory[i];
     it[t.dataset.part] = t.value;
     const parts = ["vault", "floor", "sold"];
-    const any = parts.every((p) => it[p] !== undefined && it[p] !== "");
+    const any = parts.some((p) => it[p] !== undefined && it[p] !== "");
     it.physical = any
       ? parts.reduce((a, p) => a + (Number(it[p]) || 0), 0)
       : "";
