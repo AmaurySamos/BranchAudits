@@ -61,28 +61,28 @@ const save = () => {
   } catch (e) {}
 };
 // Sample inventory list kept for reference (the list actually used is in loadInventory())
-const SAMPLE_INVENTORY = [
-  {
-    sku: "125156",
-    item: "WIFI 6 MESH VILO SYSTEM",
-    stock: 19,
-  },
-  {
-    sku: "750053C",
-    item: "SAMSUNG S25 ULTRA 512GB CELL GSM",
-    stock: 1,
-  },
-  {
-    sku: "750074C",
-    item: "TCL 55 CLASS S4 4K UHD HDR SMART TV",
-    stock: 2,
-  },
-  {
-    sku: "USIM",
-    item: "USIM",
-    stock: 1174,
-  },
-];
+// const SAMPLE_INVENTORY = [
+//   {
+//     sku: "125156",
+//     item: "WIFI 6 MESH VILO SYSTEM",
+//     stock: 19,
+//   },
+//   {
+//     sku: "750053C",
+//     item: "SAMSUNG S25 ULTRA 512GB CELL GSM",
+//     stock: 1,
+//   },
+//   {
+//     sku: "750074C",
+//     item: "TCL 55 CLASS S4 4K UHD HDR SMART TV",
+//     stock: 2,
+//   },
+//   {
+//     sku: "USIM",
+//     item: "USIM",
+//     stock: 1174,
+//   },
+// ];
 // Observation questions shown as a dropdown (marker #): question text -> options
 const DROPDOWNS = {
   "Sr. performs random checks, twice per month on each rep": [
@@ -280,7 +280,7 @@ const OBS_SCOPE = {
   "Cash Handling": "fin",
   "Store Mgmt: Balancing, Oversight & Monitoring": "fin",
   "Vault Management": "fin",
-  "Prior Week Selected": "fin",
+  "Daily Collection Review": "fin",
   "DigiWallet & DigiTV": "fin",
   "Inventory Management Monitoring": "tech",
   "Store Maintenance & Marketing": "tech",
@@ -347,9 +347,15 @@ function renderInventory() {
   let h = "";
   items.forEach((item, i) => {
     const physical = item.physical || "";
-    const variance = physical === "" ? 0 : Number(physical) - item.stock;
+    const variance = physical === "" ? null : Number(physical) - item.stock;
+    const cls =
+      physical === ""
+        ? "inv-pending"
+        : variance === 0
+          ? "inv-ok"
+          : "inv-variance";
     h += `
-      <div class="f">
+        <div class="f ${cls}">
           <h3>${item.item}</h3>
           <div>
               <b>SKU:</b> ${item.sku}
@@ -367,10 +373,11 @@ function renderInventory() {
             <div><small>Sold, not in system yet</small>
               <input type="number" min="0" inputmode="numeric" data-part="sold" data-idx="${i}" value="${item.sold ?? ""}"></div>
           </div>
-          <div id="tot_${i}" class="invtot">Total counted: ${physical === "" ? 0 : physical}</div>
-          <div id="var_${i}" style="margin-top:8px; font-weight:bold; color:${variance === 0 ? "#2e7d32" : "#c0392b"};">
-              Variance: ${variance}
-          </div>
+          <div id="tot_${i}" class="invtot">Total counted: ${physical === "" ? "NOT COUNTED" : physical}</div>
+            <div
+                id="var_${i}" style="margin-top:8px; font-weight:bold; color:${variance === null ? "#64748b" : variance === 0 ? "#2e7d32" : "#c0392b"};">
+                Variance: ${variance === null ? "PENDING" : variance}
+            </div>
           <div id="comment_${i}"style="display:${variance !== 0 ? "block" : "none"}">
             <label style="margin-top:10px;"> Variance Comment </label>
             <textarea data-varcomment="${i}"placeholder="Reason for variance">${item.comment || ""}</textarea>
@@ -385,6 +392,7 @@ function inventorySummary() {
   const counted = items.filter(
     (i) => i.physical !== undefined && i.physical !== "",
   ).length;
+  const pending = items.length - counted;
   const variances = items.filter(
     (i) =>
       i.physical !== undefined &&
@@ -397,6 +405,7 @@ function inventorySummary() {
   return `<div class="f">
         <h3>Inventory Summary</h3>
         <div>Total Items: <b>${items.length}</b></div>
+        <div>Pending Count: <b>${pending}</b></div>
         <div>Items Counted: <b id="sumCounted">${counted}</b></div>
         <div>Variances Found: <b id="sumVariance">${variances}</b></div>
         <div>Accuracy: <b id="sumAccuracy">${accuracy}%</b></div>
@@ -1045,6 +1054,21 @@ const BUILD = {
           miss.join(", "),
       );
       return null;
+    }
+    // Prevent submission if inventory items have not been counted
+    if (D.sTech && D.inventory && D.inventory.length) {
+      const pending = D.inventory.filter(
+        (i) => i.physical === undefined || i.physical === "",
+      );
+      if (pending.length) {
+        alert(
+          pending.length +
+            " inventory item(s) have not been counted.\n\n" +
+            "Please complete all inventory counts before submitting.",
+        );
+        tab("4");
+        return;
+      }
     }
     return {
       Findings: {

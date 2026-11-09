@@ -623,3 +623,14 @@ nav button.done::after {
 .bar:has(#submitBtn[style*="none"]) .sec {
   flex: 1;
 }
+.inv-pending {
+  border-left: 4px solid #f59e0b;
+}
+
+.inv-ok {
+  border-left: 4px solid #16a34a;
+}
+
+.inv-variance {
+  border-left: 4px solid #dc2626;
+}
