@@ -191,7 +191,7 @@ const OBS = [
     "Other comments",
   ],
 ];
-// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, WR = area not reviewed
+// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, NR = area not reviewed
 const FIN = [
   [
     "SECURITY",
@@ -1022,7 +1022,7 @@ const BUILD = {
     );
     if (miss.length) {
       alert(
-        "Please answer all findings (Yes / No / WR).\n\n" +
+        "Please answer all findings (Yes / No / NR).\n\n" +
           miss.length +
           " missing: " +
           miss.join(", "),
@@ -1238,7 +1238,7 @@ function R() {
   });
   //Finding Tab structure
   h +=
-    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>WR</b> = area not reviewed</div>';
+    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>NR</b> = area not reviewed</div>';
   FIN.forEach((s, si) => {
     if (!inScope(FIN_SCOPE[s[0]])) return; // skip findings sections outside the chosen sections
     h += `<h3>${si + 1}.00 ${s[0]}</h3>`;
@@ -1246,7 +1246,7 @@ function R() {
       const k = "f" + fid(si, qi);
       h +=
         `<div class="f"><label>${fid(si, qi)} ${q}</label><div class="yn" data-k="${k}">` +
-        ["Yes", "No", "WR"]
+        ["Yes", "No", "NR"]
           .map(
             (v) =>
               `<button data-v="${v}" class="${D[k] == v ? v : ""}">${v}</button>`,
@@ -1342,6 +1342,15 @@ function R() {
         <button class="add" id="loadInventory">
           Load Inventory
         </button>
+        <h3>Inventory Count</h3>
+          <div class="f">
+              <label>Branch</label>
+              <div>${D.branch || "-"}</div>
+              <label>Items Loaded</label>
+              <div>
+                  ${(D.inventory || []).length}
+              </div>
+          </div>
          <div class="inv-grid">${renderInventory()}</div>
         ${inventorySummary()}
     </section>`;
@@ -1491,7 +1500,7 @@ document.addEventListener("click", (ev) => {
   if (t.closest("#nav button")) {
     return tab(t.closest("#nav button").dataset.t);
   }
-  // Yes/No/WR buttons
+  // Yes/No/NR buttons
   const b = t.closest(".yn button");
   if (b && b.parentNode.dataset.vi != null) {
     // Voucher "signed by authorizer / receiver" Yes/No buttons
@@ -1654,32 +1663,32 @@ function doGet(e) {
 }
 // "Load Inventory" button: fills D.inventory with the items to count (edit the list here)
 async function loadInventory() {
-  D.inventory = [
-    {
-      sku: "125156",
-      item: "WIFI 6 MESH VILO SYSTEM",
-      stock: 19,
-    },
-    {
-      sku: "750053C",
-      item: "SAMSUNG S25 ULTRA 512GB CELL GSM",
-      stock: 1,
-    },
-    {
-      sku: "750074C",
-      item: "TCL 55 CLASS S4 4K UHD HDR SMART TV",
-      stock: 2,
-    },
-    {
-      sku: "USIM",
-      item: "USIM",
-      stock: 1174,
-    },
-  ];
-  save();
-  R();
-  tab("4");
+  if (!D.branch) {
+    alert("Please select a branch first.");
+    return;
+  }
+  try {
+    const r = await fetch(
+      ENDPOINT +
+        "?action=inventory" +
+        "&branch=" +
+        encodeURIComponent(D.branch),
+    );
+    const data = await r.json();
+    if (!data.length) {
+      alert("No inventory was found for this branch.");
+      return;
+    }
+    D.inventory = data;
+    save();
+    R();
+    tab("4");
+  } catch (err) {
+    console.error(err);
+    alert("Unable to load inventory.");
+  }
 }
+
 // FLUSH: sends queued audits to Google. Failures stay queued and retry when the phone is online again.
 async function flush(fresh) {
   const q = getQ();
