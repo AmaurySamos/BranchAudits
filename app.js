@@ -8,12 +8,29 @@ const ENDPOINT =
   DK = "storeAuditDraft_v1";
 // EDIT THESE LISTS to match your branches and auditors
 const BRANCHES = [
-  "001 - San Ignacio",
+  "001 - Orangewalk",
   "002 - Corozal",
-  "003 - Ladyville",
-  "004 - Caye Caulker",
+  "003 - San Pedro",
+  "004 - San Ignacio",
+  "005 - Belmopan",
+  "006 - Caye Caulker",
+  "007 - Flagship",
+  "008 - Ladyville",
+  "009 - Signature",
+  "010 - Punta Gorda",
+  "011 - Independence",
+  "012 - Dangriga",
+  "013 - Placencia",
 ];
-const AUDITORS = ["Amaury Samos", "Stephanie Hall"];
+const AUDITORS = [
+  "Mario Quiroz",
+  "Annel Lemus",
+  "Stephanie Hall",
+  "Timothy Uwaje",
+  "Freddy Martinez",
+  "Amaury Samos",
+  "Lupita Blanco",
+];
 // Shortcut: $('x') means document.getElementById('x')
 const $ = (id) => document.getElementById(id);
 // D = the whole form state (every answer). Saved to the phone after each change so nothing is lost on refresh.
