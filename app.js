@@ -1682,10 +1682,20 @@ function doGet(e) {
 }
 function applyTheme() {
   const theme = AUDITOR_THEMES[D.auditor];
-  if (!theme) return;
-  document.documentElement.style.setProperty("--brand", theme.brand);
-  document.documentElement.style.setProperty("--brand2", theme.brand2);
-  document.documentElement.style.setProperty("--accent", theme.accent);
+
+  if (theme) {
+    document.documentElement.style.setProperty("--brand", theme.brand);
+
+    document.documentElement.style.setProperty("--brand2", theme.brand2);
+
+    document.documentElement.style.setProperty("--accent", theme.accent);
+  } else {
+    document.documentElement.style.setProperty("--brand", "#0f2548");
+
+    document.documentElement.style.setProperty("--brand2", "#1f3864");
+
+    document.documentElement.style.setProperty("--accent", "#06b6d4");
+  }
 }
 
 // "Load Inventory" button: fills D.inventory with the items to count (edit the list here)
