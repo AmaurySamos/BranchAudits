@@ -346,7 +346,7 @@ function renderInventory() {
   const items = D.inventory || [];
   let h = "";
   items.forEach((item, i) => {
-    const physical = item.physical || "";
+    const physical = item.physical ?? "";
     const variance = physical === "" ? null : Number(physical) - item.stock;
     const cls =
       physical === ""
@@ -405,7 +405,7 @@ function inventorySummary() {
   return `<div class="f">
         <h3>Inventory Summary</h3>
         <div>Total Items: <b>${items.length}</b></div>
-        <div>Pending Count: <b>${pending}</b></div>
+        <div>Pending Count: <b id="sumPending">${pending}</b></div>
         <div>Items Counted: <b id="sumCounted">${counted}</b></div>
         <div>Variances Found: <b id="sumVariance">${variances}</b></div>
         <div>Accuracy: <b id="sumAccuracy">${accuracy}%</b></div>
@@ -1057,9 +1057,13 @@ const BUILD = {
     }
     // Prevent submission if inventory items have not been counted
     if (D.sTech && D.inventory && D.inventory.length) {
-      const pending = D.inventory.filter(
-        (i) => i.physical === undefined || i.physical === "",
-      );
+      const pending = D.inventory.filter((i) => {
+        const entered =
+          i.vault !== undefined ||
+          i.floor !== undefined ||
+          i.sold !== undefined;
+        return !entered;
+      });
       if (pending.length) {
         alert(
           pending.length +
@@ -1492,7 +1496,7 @@ document.addEventListener("input", (ev) => {
     const it = D.inventory[i];
     it[t.dataset.part] = t.value;
     const parts = ["vault", "floor", "sold"];
-    const any = parts.some((p) => it[p] !== undefined && it[p] !== "");
+    const any = parts.every((p) => it[p] !== undefined && it[p] !== "");
     it.physical = any
       ? parts.reduce((a, p) => a + (Number(it[p]) || 0), 0)
       : "";
