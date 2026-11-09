@@ -31,6 +31,22 @@ const AUDITORS = [
   "Amaury Samos",
   "Lupita Blanco",
 ];
+const AUDITOR_THEMES = {
+  "Amaury Samos": {
+    brand: "#0f2548",
+    brand2: "#1f3864",
+    accent: "#06b6d4",
+  },
+  "Lupita Blanco": {
+    brand: "#3b0764",
+    brand2: "#6b21a8",
+    accent: "#c084fc",
+  },
+};
+const AUDITOR_ICONS = {
+  "Amaury Samos": "◆",
+  "Lupita Blanco": "💜",
+};
 // Shortcut: $('x') means document.getElementById('x')
 const $ = (id) => document.getElementById(id);
 // D = the whole form state (every answer). Saved to the phone after each change so nothing is lost on refresh.
@@ -1427,6 +1443,9 @@ document.addEventListener("input", (ev) => {
   if (t.dataset.k) {
     D[t.dataset.k] = t.value;
     calc();
+    if (t.dataset.k === "auditor") {
+      applyTheme();
+    }
   } else if (t.dataset.scope != null) {
     D[t.dataset.scope] = t.checked; // ticking a section redraws the form
     save();
@@ -1664,6 +1683,14 @@ function doGet(e) {
     );
   }
 }
+function applyTheme() {
+  const theme = AUDITOR_THEMES[D.auditor];
+  if (!theme) return;
+  document.documentElement.style.setProperty("--brand", theme.brand);
+  document.documentElement.style.setProperty("--brand2", theme.brand2);
+  document.documentElement.style.setProperty("--accent", theme.accent);
+}
+
 // "Load Inventory" button: fills D.inventory with the items to count (edit the list here)
 async function loadInventory() {
   if (!D.branch) {
@@ -1746,5 +1773,6 @@ if ("serviceWorker" in navigator)
   navigator.serviceWorker.register("service-worker.js");
 // Start-up: draw the form and the progress bar
 R();
+applyTheme();
 updateProgress();
 flush();
