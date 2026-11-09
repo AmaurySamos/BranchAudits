@@ -341,31 +341,72 @@ const cg = (k, l) =>
 // Builds a "label ... total" line; the amount is filled in by calc()
 const tot = (id, l) =>
   `<div class="t"><span>${l}</span><span id="${id}">$0.00</span></div>`;
+// An item is "counted" only while at least one box has a number (0 counts). Clearing every box makes it pending again.
+const isCounted = (it) =>
+  it.physical !== undefined && it.physical !== null && it.physical !== "";
+const pendingInventory = () => (D.inventory || []).filter((i) => !isCounted(i));
+// Repaints ONE inventory card live: colour (orange pending / green OK / red variance), totals, variance and comment box
+function paintInvCard(i) {
+  const it = D.inventory[i];
+  const counted = isCounted(it);
+  const variance = counted ? Number(it.physical) - Number(it.stock) : null;
+  const card = $("inv_" + i);
+  if (card)
+    card.className =
+      "f " +
+      (!counted ? "inv-pending" : variance === 0 ? "inv-ok" : "inv-variance");
+  const tot = $("tot_" + i);
+  if (tot)
+    tot.textContent =
+      "Total counted: " + (counted ? it.physical : "NOT COUNTED");
+  const v = $("var_" + i);
+  if (v) {
+    v.textContent = "Variance: " + (counted ? variance : "PENDING");
+    v.style.color = !counted
+      ? "#64748b"
+      : variance === 0
+        ? "#2e7d32"
+        : "#c0392b";
+  }
+  const cm = $("comment_" + i);
+  if (cm) cm.style.display = counted && variance !== 0 ? "block" : "none";
+}
+// Totals for the summary card
+function inventoryStats() {
+  const items = D.inventory || [];
+  const counted = items.filter(isCounted);
+  const variances = counted.filter(
+    (i) => Number(i.physical) !== Number(i.stock),
+  ).length;
+  return {
+    total: items.length,
+    counted: counted.length,
+    pending: items.length - counted.length,
+    variances,
+    accuracy: counted.length
+      ? (((counted.length - variances) / counted.length) * 100).toFixed(1)
+      : "0.0",
+  };
+}
 // Draws one card per inventory item: system stock, physical count box, live variance, comment box when variance is not 0
 function renderInventory() {
   const items = D.inventory || [];
   let h = "";
   items.forEach((item, i) => {
-    const physical = item.physical ?? "";
-    const variance = physical === "" ? null : Number(physical) - item.stock;
-    const counted =
-      item.vault !== undefined ||
-      item.floor !== undefined ||
-      item.sold !== undefined;
+    const counted = isCounted(item);
+    const variance = counted
+      ? Number(item.physical) - Number(item.stock)
+      : null;
     const cls = !counted
       ? "inv-pending"
       : variance === 0
         ? "inv-ok"
         : "inv-variance";
     h += `
-        <div class="f ${cls}">
+        <div class="f ${cls}" id="inv_${i}">
           <h3>${item.item}</h3>
-          <div>
-              <b>SKU:</b> ${item.sku}
-          </div>
-          <div>
-              <b>System Stock:</b> ${item.stock}
-          </div>
+          <div><b>SKU:</b> ${item.sku}</div>
+          <div><b>System Stock:</b> ${item.stock}</div>
           <br>
           <label>Count by location</label>
           <div class="parts">
@@ -376,65 +417,35 @@ function renderInventory() {
             <div><small>Sold, not in system yet</small>
               <input type="number" min="0" inputmode="numeric" data-part="sold" data-idx="${i}" value="${item.sold ?? ""}"></div>
           </div>
-          <div id="tot_${i}" class="invtot">Total counted: ${physical === "" ? "NOT COUNTED" : physical}</div>
-            <div
-                id="var_${i}" style="margin-top:8px; font-weight:bold; color:${variance === null ? "#64748b" : variance === 0 ? "#2e7d32" : "#c0392b"};">
-                Variance: ${variance === null ? "PENDING" : variance}
-            </div>
-          <div id="comment_${i}"style="display:${variance !== 0 ? "block" : "none"}">
-            <label style="margin-top:10px;"> Variance Comment </label>
-            <textarea data-varcomment="${i}"placeholder="Reason for variance">${item.comment || ""}</textarea>
+          <div id="tot_${i}" class="invtot">Total counted: ${counted ? item.physical : "NOT COUNTED"}</div>
+          <div id="var_${i}" style="margin-top:8px; font-weight:bold; color:${!counted ? "#64748b" : variance === 0 ? "#2e7d32" : "#c0392b"};">
+            Variance: ${counted ? variance : "PENDING"}
           </div>
-      </div>`;
+          <div id="comment_${i}" style="display:${counted && variance !== 0 ? "block" : "none"}">
+            <label style="margin-top:10px;">Variance Comment</label>
+            <textarea data-varcomment="${i}" placeholder="Reason for variance">${item.comment || ""}</textarea>
+          </div>
+        </div>`;
   });
   return h;
 }
-// Builds the Inventory Summary card (items counted, variances found, accuracy %)
 function inventorySummary() {
-  const items = D.inventory || [];
-  const counted = items.filter(
-    (i) =>
-      i.vault !== undefined || i.floor !== undefined || i.sold !== undefined,
-  ).length;
-  const pending = items.length - counted;
-  const variances = items.filter(
-    (i) =>
-      i.physical !== undefined &&
-      i.physical !== "" &&
-      Number(i.physical) !== Number(i.stock),
-  ).length;
-  const accuracy = counted
-    ? (((counted - variances) / counted) * 100).toFixed(1)
-    : "0.0";
+  const s = inventoryStats();
   return `<div class="f">
         <h3>Inventory Summary</h3>
-        <div>Total Items: <b>${items.length}</b></div>
-        <div>Pending Count: <b id="sumPending">${pending}</b></div>
-        <div>Items Counted: <b id="sumCounted">${counted}</b></div>
-        <div>Variances Found: <b id="sumVariance">${variances}</b></div>
-        <div>Accuracy: <b id="sumAccuracy">${accuracy}%</b></div>
+        <div>Total Items: <b>${s.total}</b></div>
+        <div>Pending Count: <b id="sumPending">${s.pending}</b></div>
+        <div>Items Counted: <b id="sumCounted">${s.counted}</b></div>
+        <div>Variances Found: <b id="sumVariance">${s.variances}</b></div>
+        <div>Accuracy: <b id="sumAccuracy">${s.accuracy}%</b></div>
     </div>`;
 }
-// Refreshes the summary numbers without redrawing the page
 function updateInventorySummary() {
-  const items = D.inventory || [];
-  const counted = items.filter(
-    (i) =>
-      i.vault !== undefined || i.floor !== undefined || i.sold !== undefined,
-  ).length;
-  const pending = items.length - counted;
-  const variances = items.filter(
-    (i) =>
-      i.physical !== undefined &&
-      i.physical !== "" &&
-      Number(i.physical) !== Number(i.stock),
-  ).length;
-  const accuracy = counted
-    ? (((counted - variances) / counted) * 100).toFixed(1)
-    : "0.0";
-  $("sumCounted").textContent = counted;
-  $("sumVariance").textContent = variances;
-  $("sumAccuracy").textContent = accuracy + "%";
+  const s = inventoryStats();
+  $("sumPending").textContent = s.pending; // this line was missing, so Pending never changed
+  $("sumCounted").textContent = s.counted;
+  $("sumVariance").textContent = s.variances;
+  $("sumAccuracy").textContent = s.accuracy + "%";
 }
 // ===== SECURITY TAB (sections A-D) =====
 // item: [id, type, question, optional [parentId, parentValue] = only shown when parent has that answer]
@@ -906,13 +917,19 @@ const BUILD = {
     };
   },
   inventory(sid, at) {
-    const items = (D.inventory || []).filter(
-      (r) => r.physical !== undefined && r.physical !== "",
-    );
-    if (!items.length) {
-      alert("Please count at least one inventory item before submitting.");
+    if (!(D.inventory || []).length) {
+      alert("Please load the inventory first.");
       return null;
     }
+    const pending = pendingInventory();
+    if (pending.length) {
+      alert(
+        pending.length +
+          " inventory item(s) have not been counted.\n\nEnter a count (0 if none) for every item, or use Save for later and finish later.",
+      );
+      return null;
+    }
+    const items = D.inventory;
     return {
       "Inventory Lines": {
         headers: [
@@ -1062,25 +1079,13 @@ const BUILD = {
       return null;
     }
     // Prevent submission if inventory items have not been counted
-    if (D.sTech && D.inventory && D.inventory.length) {
-      const pending = D.inventory.filter((i) => {
-        const total =
-          (Number(i.vault) || 0) +
-          (Number(i.floor) || 0) +
-          (Number(i.sold) || 0);
-        return (
-          i.vault === undefined && i.floor === undefined && i.sold === undefined
-        );
-      });
-      if (pending.length) {
-        alert(
-          pending.length +
-            " inventory item(s) have not been counted.\n\n" +
-            "Please complete all inventory counts before submitting.",
-        );
-        tab("4");
-        return;
-      }
+    if (D.sTech && pendingInventory().length) {
+      alert(
+        pendingInventory().length +
+          " inventory item(s) have not been counted.\n\nPlease complete all inventory counts before submitting.",
+      );
+      tab("4");
+      return null;
     }
     return {
       Findings: {
@@ -1508,16 +1513,7 @@ document.addEventListener("input", (ev) => {
     it.physical = any
       ? parts.reduce((a, p) => a + (Number(it[p]) || 0), 0)
       : "";
-    const total = it.physical === "" ? 0 : it.physical;
-    const variance = total - Number(it.stock);
-    $("tot_" + i).textContent = "Total counted: " + total;
-    const v = $("var_" + i);
-    if (v) {
-      v.textContent = "Variance: " + variance;
-      v.style.color = variance === 0 ? "#2e7d32" : "#c0392b";
-    }
-    const comment = $("comment_" + i);
-    if (comment) comment.style.display = variance !== 0 ? "block" : "none";
+    paintInvCard(i);
     save();
     updateInventorySummary();
     return;
