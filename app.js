@@ -43,10 +43,7 @@ const AUDITOR_THEMES = {
     accent: "#c084fc",
   },
 };
-const AUDITOR_ICONS = {
-  "Amaury Samos": "◆",
-  "Lupita Blanco": "💜",
-};
+
 // Shortcut: $('x') means document.getElementById('x')
 const $ = (id) => document.getElementById(id);
 // D = the whole form state (every answer). Saved to the phone after each change so nothing is lost on refresh.
