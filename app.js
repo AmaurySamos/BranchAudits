@@ -346,7 +346,7 @@ function renderInventory() {
   const items = D.inventory || [];
   let h = "";
   items.forEach((item, i) => {
-    // const physical = item.physical ?? "";
+    const physical = item.physical ?? "";
     const variance = physical === "" ? null : Number(physical) - item.stock;
     const counted =
       item.vault !== undefined ||
