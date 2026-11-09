@@ -118,7 +118,7 @@ const OBS = [
     "$Petty Cash indicated by Stores ($)",
     "$Petty Cash reconciliation amount ($)",
     "=Petty Cash variance",
-    "?Petty Cash count balanced or consists of immaterial differences",
+    "!Was the petty cash count balanced? If not, indicate whether the variance is material or immaterial",
     "?Petty Cash payments consist of payments to vendors, refund of deposits, refund of installation and change",
     "!Monthly replenishment of Petty Cash is done",
     "@Last date of Petty Cash replenishment",
