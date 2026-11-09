@@ -1685,15 +1685,11 @@ function applyTheme() {
 
   if (theme) {
     document.documentElement.style.setProperty("--brand", theme.brand);
-
     document.documentElement.style.setProperty("--brand2", theme.brand2);
-
     document.documentElement.style.setProperty("--accent", theme.accent);
   } else {
     document.documentElement.style.setProperty("--brand", "#0f2548");
-
     document.documentElement.style.setProperty("--brand2", "#1f3864");
-
     document.documentElement.style.setProperty("--accent", "#06b6d4");
   }
 }
