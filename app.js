@@ -346,14 +346,17 @@ function renderInventory() {
   const items = D.inventory || [];
   let h = "";
   items.forEach((item, i) => {
-    const physical = item.physical ?? "";
+    // const physical = item.physical ?? "";
     const variance = physical === "" ? null : Number(physical) - item.stock;
-    const cls =
-      physical === ""
-        ? "inv-pending"
-        : variance === 0
-          ? "inv-ok"
-          : "inv-variance";
+    const counted =
+      item.vault !== undefined ||
+      item.floor !== undefined ||
+      item.sold !== undefined;
+    const cls = !counted
+      ? "inv-pending"
+      : variance === 0
+        ? "inv-ok"
+        : "inv-variance";
     h += `
         <div class="f ${cls}">
           <h3>${item.item}</h3>
@@ -390,7 +393,8 @@ function renderInventory() {
 function inventorySummary() {
   const items = D.inventory || [];
   const counted = items.filter(
-    (i) => i.physical !== undefined && i.physical !== "",
+    (i) =>
+      i.vault !== undefined || i.floor !== undefined || i.sold !== undefined,
   ).length;
   const pending = items.length - counted;
   const variances = items.filter(
@@ -415,8 +419,10 @@ function inventorySummary() {
 function updateInventorySummary() {
   const items = D.inventory || [];
   const counted = items.filter(
-    (i) => i.physical !== undefined && i.physical !== "",
+    (i) =>
+      i.vault !== undefined || i.floor !== undefined || i.sold !== undefined,
   ).length;
+  const pending = items.length - counted;
   const variances = items.filter(
     (i) =>
       i.physical !== undefined &&
