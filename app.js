@@ -157,6 +157,9 @@ const OBS = [
     "Log of vault access",
     "Cash fund tracking in vault",
     "Vault code for each individual accessing the vault",
+  ],
+  [
+    "Daily Collection Review",
     "Prior week: end of day reports and reconciliation of cash collected, including voided supports",
   ],
   [
@@ -264,6 +267,7 @@ const OBS_SCOPE = {
   "Cash Handling": "fin",
   "Store Mgmt: Balancing, Oversight & Monitoring": "fin",
   "Vault Management": "fin",
+  "Prior Week Selected": "fin",
   "DigiWallet & DigiTV": "fin",
   "Inventory Management Monitoring": "tech",
   "Store Maintenance & Marketing": "tech",
@@ -1338,7 +1342,6 @@ function R() {
   //Inventory Tab Section Structure
   h += `
     <section id="s4">
-        <h3>Inventory Count</h3>
         <button class="add" id="loadInventory">
           Load Inventory
         </button>
