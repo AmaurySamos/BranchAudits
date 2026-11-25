@@ -1,4 +1,4 @@
-const CACHE_NAME = "store-audit-v21";
+const CACHE_NAME = "store-audit-v25";
 const urlsToCache = [
   "./",
   "./index.html",

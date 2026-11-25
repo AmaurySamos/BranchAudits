@@ -207,49 +207,50 @@ const OBS = [
     "Other comments",
   ],
 ];
-// FINDINGS checklist. Each block = [section title, ...questions]. Answers: Yes = finding observed, No = not observed, NR = area not reviewed
+// FINDINGS checklist. Each block = [section title, ...questions].
+// Answers: Yes = in place / compliant, No = finding (problem), NR = area not reviewed
 const FIN = [
   [
     "SECURITY",
-    "Panic Buttons: alert buttons were tested and were not working",
-    "Panic Buttons: no response from the monitor room when the panic button was activated",
-    "Surveillance camera does not adequately cover entire area",
-    "Surveillance cameras are not monitored by zone admin or senior at the back office",
-    "The branch does not have a Vault/Safe",
-    "CSRs do not have an appropriate drawer lock and cash trays",
-    "Staff members do not have unique alarm code",
-    "The branch does not have a safe method of daily cash deposit",
-    "Branch fire extinguishers are not readily visible and accessible",
-    "Fire extinguishers have not been recently serviced",
-    "Staff have not been trained in fire extinguisher use",
-    "Staff have not been trained in robbery preparedness and other emergency protocols",
-    "The compound fence is not properly maintained",
+    "Panic buttons: alert buttons were tested and are working",
+    "Panic buttons: the monitor room responded when the panic button was activated",
+    "Surveillance cameras adequately cover the entire area",
+    "Surveillance cameras are monitored by the zone admin or senior at the back office",
+    "The branch has a Vault/Safe",
+    "CSRs have an appropriate drawer lock and cash trays",
+    "Staff members have unique alarm codes",
+    "The branch has a safe method of daily cash deposit",
+    "Branch fire extinguishers are readily visible and accessible",
+    "Fire extinguishers have been recently serviced",
+    "Staff have been trained in fire extinguisher use",
+    "Staff have been trained in robbery preparedness and other emergency protocols",
+    "The compound fence is properly maintained",
   ],
   [
     "CASH & CASH HANDLING",
-    "Petty cash reconciliation was NOT completed within the month",
-    "Petty cash did NOT balance (material/immaterial differences)",
-    "CSR cash did NOT balance (material/immaterial differences)",
-    "DigiWallet (physical/digital cash) did NOT balance (material/immaterial difference)",
-    "Senior does NOT perform random checks on CSRs",
-    "Senior does NOT perform monthly checks on their own cash",
-    "Senior is NOT the only one who has vault access",
-    "Zone Admin does NOT perform regular visits, physical count of cash and review of reports",
-    "Vouchers are NOT signed by authorizer",
-    "Receipts are NOT signed by receiver",
-    "Deposit slips are NOT signed by the depositor or attached to the Daily Collection Report",
-    "Credit card machines are NOT settled daily",
+    "Petty cash reconciliation was completed within the month",
+    "Petty cash balanced (no material or immaterial differences)",
+    "CSR cash balanced (no material or immaterial differences)",
+    "DigiWallet (physical/digital cash) balanced (no material or immaterial differences)",
+    "Senior performs random checks on CSRs",
+    "Senior performs monthly checks on their own cash",
+    "Senior is the only one who has vault access",
+    "Zone Admin performs regular visits, physical count of cash and review of reports",
+    "Vouchers are signed by the authorizer",
+    "Receipts are signed by the receiver",
+    "Deposit slips are signed by the depositor and attached to the Daily Collection Report",
+    "Credit card machines are settled daily",
   ],
   [
     "INVENTORY",
-    "Inventory count did NOT agree to the inventory stock listing",
-    "Material variances were noted during the inventory count",
-    "Variances have NOT been properly investigated or are still being investigated",
-    "Inventory items counted are NOT in good condition",
-    "Stock room is NOT kept neat and clean to facilitate location of inventory",
-    "Inventory counts are NOT completed monthly",
-    "Last stock take report has material differences",
-    "There is NOT an adequate amount of stock to meet customer demands",
+    "Inventory count agreed to the inventory stock listing",
+    "No material variances were noted during the inventory count",
+    "Variances have been properly investigated and are no longer under investigation",
+    "Inventory items counted are in good condition",
+    "Stock room is kept neat and clean to facilitate location of inventory",
+    "Inventory counts are completed monthly",
+    "Last stock take report has no material differences",
+    "There is an adequate amount of stock to meet customer demands",
   ],
 ];
 // ===== AUDIT SECTIONS (chosen on the Info tab) =====
@@ -1276,14 +1277,14 @@ function R() {
   });
   //Finding Tab structure
   h +=
-    '</section><section id="s2"><div class="f"><b>Yes</b> = finding observed &nbsp; <b>No</b> = not observed &nbsp; <b>NR</b> = area not reviewed</div>';
+    '</section><section id="s2"><div class="f"><b>Yes</b> = in place / compliant &nbsp; <b>No</b> = finding (problem) &nbsp; <b>NR</b> = area not reviewed</div>';
   FIN.forEach((s, si) => {
     if (!inScope(FIN_SCOPE[s[0]])) return; // skip findings sections outside the chosen sections
     h += `<h3>${si + 1}.00 ${s[0]}</h3>`;
     s.slice(1).forEach((q, qi) => {
       const k = "f" + fid(si, qi);
       h +=
-        `<div class="f"><label>${fid(si, qi)} ${q}</label><div class="yn" data-k="${k}">` +
+        `<div class="f"><label>${fid(si, qi)} ${q}</label><div class="yn pos" data-k="${k}">` +
         ["Yes", "No", "NR"]
           .map(
             (v) =>
