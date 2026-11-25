@@ -157,7 +157,7 @@ const OBS = [
     "?There is a controlled adjustment process and adjustment reports are reviewed",
     "?All monitoring reports reviewed by the Zone Admin/Senior",
     "?System generated receipt is attached to manual receipts",
-    "#Deposits are complete and done on the same day (with the exception of Ladyville which is WEEKLY and Caye Caulker which is TWICE A WEEK)",
+    "?Deposits are complete and done 3 times a week (Moday, Wednesday, and Friday)",
     "?Deposit Slips contain the depositor Signature and are attached to the Daily Collections Report",
     "#Credit Card Machines are settled Daily (when applicable) and settlement slips are attached to the Daily Collections Report",
     "?Cash shortages are investigated and reason is stated in the Daily Collections Report",
@@ -226,19 +226,6 @@ const FIN = [
     "The compound fence is not properly maintained",
   ],
   [
-    "TOWER AND MAINTENANCE",
-    "Tower is NOT in good physical condition",
-    "Signs of damage to antennas and equipment on tower observed",
-    "Power supply is NOT adequately secured",
-    "Grounding for tower is NOT in good condition",
-    "Exchange location is NOT adequately maintained inside and outside compound",
-    "Exchange is NOT properly secured by fencing and locked gate",
-    "Last maintenance conducted (obtain from Manager)",
-    "Fire extinguisher NOT observed at exchange",
-    "Material at exchange is NOT secured and in good condition",
-    "Store is NOT adequately maintained",
-  ],
-  [
     "CASH & CASH HANDLING",
     "Petty cash reconciliation was NOT completed within the month",
     "Petty cash did NOT balance (material/immaterial differences)",
@@ -264,11 +251,6 @@ const FIN = [
     "Last stock take report has material differences",
     "There is NOT an adequate amount of stock to meet customer demands",
   ],
-  [
-    "QMS AND BRANDING",
-    "QMS machine was not functioning",
-    "QMS ticket number display was outdated (old logo and colors)",
-  ],
 ];
 // ===== AUDIT SECTIONS (chosen on the Info tab) =====
 // Section 1 = Financial (cash & finance)    -> D.sFin
@@ -288,9 +270,7 @@ const OBS_SCOPE = {
 const FIN_SCOPE = {
   "CASH & CASH HANDLING": "fin",
   SECURITY: "tech",
-  "TOWER AND MAINTENANCE": "tech",
   INVENTORY: "tech",
-  "QMS AND BRANDING": "tech",
 };
 // true when the item's section was ticked on the Info tab
 const inScope = (sec) =>
